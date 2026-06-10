@@ -333,10 +333,10 @@ jobs:
                           android:exported="true"
                           android:theme="@style/SplashTheme"
                           android:screenOrientation="__ORIENTATION_MODE__">
-                          <intent-filter>
-                              <action android:name="android.intent.action.MAIN" />
-                              <category android:name="android.intent.category.LAUNCHER" />
-                          </intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
                       </activity>
 
                       <activity
@@ -504,6 +504,7 @@ jobs:
               import androidx.appcompat.app.AppCompatActivity;
               import android.app.Activity;
               import android.app.DownloadManager;
+              import android.app.Notification;
               import android.app.NotificationChannel;
               import android.app.NotificationManager;
               import android.content.pm.PackageManager;
@@ -529,7 +530,6 @@ jobs:
               import android.widget.ProgressBar;
               import android.widget.Toast;
               import androidx.core.content.ContextCompat;
-              import androidx.core.app.NotificationCompat;
               import android.content.ContentValues;
               import android.provider.MediaStore;
               import java.io.OutputStream;
@@ -619,11 +619,15 @@ jobs:
 
                   @JavascriptInterface
                   public void showNotification(String title, String message) {
-                      NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
-                              .setSmallIcon(R.mipmap.ic_launcher)
+                      Notification.Builder builder;
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          builder = new Notification.Builder(this, "default");
+                      } else {
+                          builder = new Notification.Builder(this);
+                      }
+                      builder.setSmallIcon(R.mipmap.ic_launcher)
                               .setContentTitle(title)
                               .setContentText(message)
-                              .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                               .setAutoCancel(true);
 
                       NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -635,33 +639,51 @@ jobs:
                   @JavascriptInterface
                   public void saveBase64File(String base64Data, String mimeType, String fileName) {
                       try {
-                          byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
-                          OutputStream os;
-                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                              ContentValues values = new ContentValues();
-                              values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-                              values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
-                              values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-                              Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-                              if (uri == null) {
-                                  runOnUiThread(() -> Toast.makeText(this, "Failed to create download target.", Toast.LENGTH_SHORT).show());
-                                  return;
+                          final byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
+                          final String fName = fileName;
+                          final String fMime = mimeType;
+                          
+                          runOnUiThread(new Runnable() {
+                              @Override
+                              public void run() {
+                                  try {
+                                      OutputStream os;
+                                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                          ContentValues values = new ContentValues();
+                                          values.put(MediaStore.MediaColumns.DISPLAY_NAME, fName);
+                                          values.put(MediaStore.MediaColumns.MIME_TYPE, fMime);
+                                          values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                                          Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                                          if (uri == null) {
+                                              Toast.makeText(MainActivity.this, "Failed to create download target.", Toast.LENGTH_SHORT).show();
+                                              return;
+                                          }
+                                          os = getContentResolver().openOutputStream(uri);
+                                      } else {
+                                          java.io.File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                                          java.io.File file = new java.io.File(downloadDir, fName);
+                                          os = new java.io.FileOutputStream(file);
+                                      }
+                                      if (os != null) {
+                                          os.write(fileBytes);
+                                          os.close();
+                                          Toast.makeText(MainActivity.this, "File saved to Downloads folder!", Toast.LENGTH_LONG).show();
+                                          showNotification("Download Completed", fName + " saved to Downloads.");
+                                      }
+                                  } catch (Exception ex) {
+                                      ex.printStackTrace();
+                                      Toast.makeText(MainActivity.this, "Error saving file: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                                  }
                               }
-                              os = getContentResolver().openOutputStream(uri);
-                          } else {
-                              java.io.File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                              java.io.File file = new java.io.File(downloadDir, fileName);
-                              os = new java.io.FileOutputStream(file);
-                          }
-                          if (os != null) {
-                              os.write(fileBytes);
-                              os.close();
-                              runOnUiThread(() -> Toast.makeText(this, "File saved to Downloads folder!", Toast.LENGTH_LONG).show());
-                              showNotification("Download Completed", fileName + " saved to Downloads.");
-                          }
-                      } catch (Exception e) {
+                          });
+                      } catch (final Exception e) {
                           e.printStackTrace();
-                          runOnUiThread(() -> Toast.makeText(this, "Error saving file: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                          runOnUiThread(new Runnable() {
+                              @Override
+                              public void run() {
+                                  Toast.makeText(MainActivity.this, "Decoder Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                              }
+                          });
                       }
                   }
 
