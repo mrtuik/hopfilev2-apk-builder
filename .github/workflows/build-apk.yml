@@ -28,9 +28,8 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Auto-Accept Android SDK Licenses
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
+      - name: Setup Android SDK (Licenses Auto-Accept)
+        uses: android-actions/setup-android@v3
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -101,698 +100,698 @@ jobs:
           # Safe python pip installation of Pillow
           python3 -m pip install pillow
           
-          cat << 'EOF' > build_assets.py
-import json
-import os
-import urllib.request
-from PIL import Image
+          cat << 'EOF' | sed 's/^              //' > build_assets.py
+              import json
+              import os
+              import urllib.request
+              from PIL import Image
 
-config_path = "app/src/main/assets/app_config.json"
-config = {}
-if os.path.exists(config_path):
-    with open(config_path, "r") as f:
-        config = json.load(f)
+              config_path = "app/src/main/assets/app_config.json"
+              config = {}
+              if os.path.exists(config_path):
+                  with open(config_path, "r") as f:
+                      config = json.load(f)
 
-# Extract configurations
-app_name = config.get("appName", os.environ.get("APP_NAME", "My App"))
-package_id = config.get("packageName", os.environ.get("PACKAGE_ID", "com.example.runner"))
-version_name = config.get("versionName", os.environ.get("VERSION_NAME", "1.0.0"))
-version_code = int(config.get("versionCode", os.environ.get("VERSION_CODE", "1")))
-theme_color = config.get("themeColor", "#4F46E5")
-homepage = config.get("homepage", "index.html")
-screen_rotation = config.get("screenRotation", "auto")
-splash_bg_color = config.get("splashBgColor", "#111827")
-splash_duration = int(config.get("splashDuration", 2000))
+              # Extract configurations
+              app_name = config.get("appName", os.environ.get("APP_NAME", "My App"))
+              package_id = config.get("packageName", os.environ.get("PACKAGE_ID", "com.example.runner"))
+              version_name = config.get("versionName", os.environ.get("VERSION_NAME", "1.0.0"))
+              version_code = int(config.get("versionCode", os.environ.get("VERSION_CODE", "1")))
+              theme_color = config.get("themeColor", "#4F46E5")
+              homepage = config.get("homepage", "index.html")
+              screen_rotation = config.get("screenRotation", "auto")
+              splash_bg_color = config.get("splashBgColor", "#111827")
+              splash_duration = int(config.get("splashDuration", 2000))
 
-# Dynamic Feature Toggles
-php_support = config.get("phpSupport", True)
-database_enabled = config.get("databaseEnabled", True)
-camera_enabled = config.get("cameraEnabled", True)
-notifications_enabled = config.get("notificationsEnabled", True)
-local_storage_enabled = config.get("localStorageEnabled", True)
-fullscreen_enabled = config.get("fullscreenEnabled", True)
-autoplay_enabled = config.get("autoplayEnabled", True)
-microphone_enabled = config.get("microphoneEnabled", True)
-hide_title_bar = config.get("hideTitleBar", True)
-swipe_refresh_enabled = config.get("swipeRefreshEnabled", True)
-long_press_enabled = config.get("longPressEnabled", True)
-loading_ui_enabled = config.get("loadingUIEnabled", True)
-pc_mode_enabled = config.get("pcModeEnabled", False)
-zoom_enabled = config.get("zoomEnabled", True)
-has_custom_splash = config.get("hasCustomSplash", False)
+              # Dynamic Feature Toggles
+              php_support = config.get("phpSupport", True)
+              database_enabled = config.get("databaseEnabled", True)
+              camera_enabled = config.get("cameraEnabled", True)
+              notifications_enabled = config.get("notificationsEnabled", True)
+              local_storage_enabled = config.get("localStorageEnabled", True)
+              fullscreen_enabled = config.get("fullscreenEnabled", True)
+              autoplay_enabled = config.get("autoplayEnabled", True)
+              microphone_enabled = config.get("microphoneEnabled", True)
+              hide_title_bar = config.get("hideTitleBar", True)
+              swipe_refresh_enabled = config.get("swipeRefreshEnabled", True)
+              long_press_enabled = config.get("longPressEnabled", True)
+              loading_ui_enabled = config.get("loadingUIEnabled", True)
+              pc_mode_enabled = config.get("pcModeEnabled", False)
+              zoom_enabled = config.get("zoomEnabled", True)
+              has_custom_splash = config.get("hasCustomSplash", False)
 
-# Write app/build.gradle using safe placeholder replacements
-app_build_gradle_template = """
-apply plugin: 'com.android.application'
-android {
-    namespace 'com.example.runner'
-    compileSdk 33
-    defaultConfig {
-        applicationId "__PACKAGE_ID__"
-        minSdk 24
-        targetSdk 33
-        versionCode __VERSION_CODE__
-        versionName "__VERSION_NAME__"
-    }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-    implementation 'com.google.android.material:material:1.9.0'
-}
-"""
-app_build_gradle = app_build_gradle_template.replace("__PACKAGE_ID__", package_id)
-app_build_gradle = app_build_gradle.replace("__VERSION_CODE__", str(version_code))
-app_build_gradle = app_build_gradle.replace("__VERSION_NAME__", version_name)
+              # Write app/build.gradle using safe placeholder replacements
+              app_build_gradle_template = """
+              apply plugin: 'com.android.application'
+              android {
+                  namespace 'com.example.runner'
+                  compileSdk 33
+                  defaultConfig {
+                      applicationId "__PACKAGE_ID__"
+                      minSdk 24
+                      targetSdk 33
+                      versionCode __VERSION_CODE__
+                      versionName "__VERSION_NAME__"
+                  }
+                  compileOptions {
+                      sourceCompatibility JavaVersion.VERSION_1_8
+                      targetCompatibility JavaVersion.VERSION_1_8
+                  }
+                  buildTypes {
+                      release {
+                          minifyEnabled false
+                          proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                      }
+                  }
+              }
+              dependencies {
+                  implementation 'androidx.appcompat:appcompat:1.6.1'
+                  implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+                  implementation 'com.google.android.material:material:1.9.0'
+              }
+              """
+              app_build_gradle = app_build_gradle_template.replace("__PACKAGE_ID__", package_id)
+              app_build_gradle = app_build_gradle.replace("__VERSION_CODE__", str(version_code))
+              app_build_gradle = app_build_gradle.replace("__VERSION_NAME__", version_name)
+              
+              with open("app/build.gradle", "w") as f:
+                  f.write(app_build_gradle.strip())
 
-with open("app/build.gradle", "w") as f:
-    f.write(app_build_gradle.strip())
+              # Write colors.xml
+              colors_xml_template = """<?xml version="1.0" encoding="utf-8"?>
+              <resources>
+                  <color name="colorPrimary">__THEME_COLOR__</color>
+                  <color name="colorPrimaryDark">__THEME_COLOR__</color>
+                  <color name="colorAccent">__THEME_COLOR__</color>
+                  <color name="splashBg">__SPLASH_BG_COLOR__</color>
+              </resources>
+              """
+              colors_xml = colors_xml_template.replace("__THEME_COLOR__", theme_color).replace("__SPLASH_BG_COLOR__", splash_bg_color)
+              with open("app/src/main/res/values/colors.xml", "w") as f:
+                  f.write(colors_xml.strip())
 
-# Write colors.xml
-colors_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="colorPrimary">__THEME_COLOR__</color>
-    <color name="colorPrimaryDark">__THEME_COLOR__</color>
-    <color name="colorAccent">__THEME_COLOR__</color>
-    <color name="splashBg">__SPLASH_BG_COLOR__</color>
-</resources>
-"""
-colors_xml = colors_xml_template.replace("__THEME_COLOR__", theme_color).replace("__SPLASH_BG_COLOR__", splash_bg_color)
-with open("app/src/main/res/values/colors.xml", "w") as f:
-    f.write(colors_xml.strip())
+              # Write styles.xml
+              theme_style_parent = "Theme.AppCompat.Light.NoActionBar"
+              theme_items = ""
+              if fullscreen_enabled:
+                  theme_items = """<item name="android:windowFullscreen">true</item>
+                  <item name="android:windowNoTitle">true</item>"""
+              elif hide_title_bar:
+                  theme_items = """<item name="android:windowNoTitle">true</item>"""
+              else:
+                  theme_style_parent = "Theme.AppCompat.Light.DarkActionBar"
 
-# Write styles.xml
-theme_style_parent = "Theme.AppCompat.Light.NoActionBar"
-theme_items = ""
-if fullscreen_enabled:
-    theme_items = """<item name="android:windowFullscreen">true</item>
-    <item name="android:windowNoTitle">true</item>"""
-elif hide_title_bar:
-    theme_items = """<item name="android:windowNoTitle">true</item>"""
-else:
-    theme_style_parent = "Theme.AppCompat.Light.DarkActionBar"
+              styles_xml_template = """<?xml version="1.0" encoding="utf-8"?>
+              <resources>
+                  <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
+                      <item name="android:windowBackground">@color/splashBg</item>
+                      <item name="android:windowFullscreen">true</item>
+                  </style>
+                  <style name="AppTheme" parent="__THEME_STYLE_PARENT__">
+                      <item name="colorPrimary">@color/colorPrimary</item>
+                      <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+                      <item name="colorAccent">@color/colorAccent</item>
+                      __THEME_ITEMS__
+                  </style>
+              </resources>
+              """
+              styles_xml = styles_xml_template.replace("__THEME_STYLE_PARENT__", theme_style_parent).replace("__THEME_ITEMS__", theme_items)
+              with open("app/src/main/res/values/styles.xml", "w") as f:
+                  f.write(styles_xml.strip())
 
-styles_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">@color/splashBg</item>
-        <item name="android:windowFullscreen">true</item>
-    </style>
-    <style name="AppTheme" parent="__THEME_STYLE_PARENT__">
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-        __THEME_ITEMS__
-    </style>
-</resources>
-"""
-styles_xml = styles_xml_template.replace("__THEME_STYLE_PARENT__", theme_style_parent).replace("__THEME_ITEMS__", theme_items)
-with open("app/src/main/res/values/styles.xml", "w") as f:
-    f.write(styles_xml.strip())
+              # Write activity_splash.xml
+              splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
+              activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
+              <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:background="@color/splashBg">
+                  <ImageView
+                      android:id="@+id/splash_logo"
+                      android:layout_width="160dp"
+                      android:layout_height="160dp"
+                      android:layout_centerInParent="true"
+                      android:src="__SPLASH_SRC_DRAWABLE__"
+                      android:visibility="visible" />
+              </RelativeLayout>
+              """
+              activity_splash_xml = activity_splash_xml_template.replace("__SPLASH_SRC_DRAWABLE__", splash_src_drawable)
+              with open("app/src/main/res/layout/activity_splash.xml", "w") as f:
+                  f.write(activity_splash_xml.strip())
 
-# Write activity_splash.xml
-splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
-activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/splashBg">
-    <ImageView
-        android:id="@+id/splash_logo"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
-        android:layout_centerInParent="true"
-        android:src="__SPLASH_SRC_DRAWABLE__"
-        android:visibility="visible" />
-</RelativeLayout>
-"""
-activity_splash_xml = activity_splash_xml_template.replace("__SPLASH_SRC_DRAWABLE__", splash_src_drawable)
-with open("app/src/main/res/layout/activity_splash.xml", "w") as f:
-    f.write(activity_splash_xml.strip())
+              # Write activity_main.xml
+              loading_progress_bar = ""
+              if loading_ui_enabled:
+                  loading_progress_bar = """<ProgressBar
+                      android:id="@+id/progressBar"
+                      style="?android:attr/progressBarStyleHorizontal"
+                      android:layout_width="match_parent"
+                      android:layout_height="6dp"
+                      android:layout_alignParentTop="true"
+                      android:progressDrawable="@android:drawable/progress_horizontal"
+                      android:visibility="gone" />"""
 
-# Write activity_main.xml
-loading_progress_bar = ""
-if loading_ui_enabled:
-    loading_progress_bar = """<ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="6dp"
-        android:layout_alignParentTop="true"
-        android:progressDrawable="@android:drawable/progress_horizontal"
-        android:visibility="gone" />"""
+              layout_below_attr = 'android:layout_below="@id/progressBar"' if loading_ui_enabled else ""
+              
+              swipe_refresh_layout_start = ""
+              swipe_refresh_layout_end = ""
+              webview_layout_below = ""
+              
+              if swipe_refresh_enabled:
+                  swipe_refresh_layout_start = """<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                      android:id="@+id/swipeRefreshLayout"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      __LAYOUT_BELOW__>"""
+                  swipe_refresh_layout_start = swipe_refresh_layout_start.replace("__LAYOUT_BELOW__", layout_below_attr)
+                  swipe_refresh_layout_end = "</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>"
+              else:
+                  webview_layout_below = layout_below_attr
 
-layout_below_attr = 'android:layout_below="@id/progressBar"' if loading_ui_enabled else ""
+              activity_main_xml_template = """<?xml version="1.0" encoding="utf-8"?>
+              <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
+                  __LOADING_PROGRESS_BAR__
+                  __SWIPE_REFRESH_LAYOUT_START__
+                  <WebView
+                      android:id="@+id/webview"
+                      android:layout_width="match_parent"
+                      android:layout_height="match_parent"
+                      __WEBVIEW_LAYOUT_BELOW__ />
+                  __SWIPE_REFRESH_LAYOUT_END__
+              </RelativeLayout>
+              """
+              activity_main_xml = activity_main_xml_template.replace("__LOADING_PROGRESS_BAR__", loading_progress_bar)
+              activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_START__", swipe_refresh_layout_start)
+              activity_main_xml = activity_main_xml.replace("__WEBVIEW_LAYOUT_BELOW__", webview_layout_below)
+              activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_END__", swipe_refresh_layout_end)
+              
+              with open("app/src/main/res/layout/activity_main.xml", "w") as f:
+                  f.write(activity_main_xml.strip())
 
-swipe_refresh_layout_start = ""
-swipe_refresh_layout_end = ""
-webview_layout_below = ""
+              # Handle Permissions
+              camera_permission_manifest = '<uses-permission android:name="android.permission.CAMERA" />' if camera_enabled else ""
+              audio_permission_manifest = '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' if microphone_enabled else ""
+              notification_permission_manifest = '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' if notifications_enabled else ""
+              
+              storage_permission_manifest = ""
+              if local_storage_enabled:
+                  storage_permission_manifest = """
+                  <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+                  <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+                  """
 
-if swipe_refresh_enabled:
-    swipe_refresh_layout_start = """<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefreshLayout"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        __LAYOUT_BELOW__>"""
-    swipe_refresh_layout_start = swipe_refresh_layout_start.replace("__LAYOUT_BELOW__", layout_below_attr)
-    swipe_refresh_layout_end = "</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>"
-else:
-    webview_layout_below = layout_below_attr
+              # Rotation preference mapping
+              orientation_mode = "unspecified"
+              if screen_rotation == "portrait":
+                  orientation_mode = "portrait"
+              elif screen_rotation == "landscape":
+                  orientation_mode = "landscape"
 
-activity_main_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-    __LOADING_PROGRESS_BAR__
-    __SWIPE_REFRESH_LAYOUT_START__
-    <WebView
-        android:id="@+id/webview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        __WEBVIEW_LAYOUT_BELOW__ />
-    __SWIPE_REFRESH_LAYOUT_END__
-</RelativeLayout>
-"""
-activity_main_xml = activity_main_xml_template.replace("__LOADING_PROGRESS_BAR__", loading_progress_bar)
-activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_START__", swipe_refresh_layout_start)
-activity_main_xml = activity_main_xml.replace("__WEBVIEW_LAYOUT_BELOW__", webview_layout_below)
-activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_END__", swipe_refresh_layout_end)
+              # Write AndroidManifest.xml
+              android_manifest_xml_template = """<?xml version="1.0" encoding="utf-8"?>
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                  <uses-permission android:name="android.permission.INTERNET" />
+                  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                  __CAMERA_PERMISSION_MANIFEST__
+                  __AUDIO_PERMISSION_MANIFEST__
+                  __NOTIFICATION_PERMISSION_MANIFEST__
+                  __STORAGE_PERMISSION_MANIFEST__
+                  
+                  <application
+                      android:allowBackup="true"
+                      android:label="@string/app_name"
+                      android:icon="@mipmap/ic_launcher"
+                      android:roundIcon="@mipmap/ic_launcher"
+                      android:supportsRtl="true"
+                      android:usesCleartextTraffic="true"
+                      android:theme="@style/AppTheme">
+                      
+                      <activity
+                          android:name="com.example.runner.SplashActivity"
+                          android:exported="true"
+                          android:theme="@style/SplashTheme"
+                          android:screenOrientation="__ORIENTATION_MODE__">
+                          <intent-filter>
+                              <action android:name="android.intent.action.MAIN" />
+                              <category android:name="android.intent.category.LAUNCHER" />
+                          </intent-filter>
+                      </activity>
 
-with open("app/src/main/res/layout/activity_main.xml", "w") as f:
-    f.write(activity_main_xml.strip())
+                      <activity
+                          android:name="com.example.runner.MainActivity"
+                          android:exported="false"
+                          android:configChanges="orientation|screenSize|keyboardHidden"
+                          android:screenOrientation="__ORIENTATION_MODE__">
+                      </activity>
+                  </application>
+              </manifest>
+              """
+              android_manifest_xml = android_manifest_xml_template.replace("__CAMERA_PERMISSION_MANIFEST__", camera_permission_manifest)
+              android_manifest_xml = android_manifest_xml.replace("__AUDIO_PERMISSION_MANIFEST__", audio_permission_manifest)
+              android_manifest_xml = android_manifest_xml.replace("__NOTIFICATION_PERMISSION_MANIFEST__", notification_permission_manifest)
+              android_manifest_xml = android_manifest_xml.replace("__STORAGE_PERMISSION_MANIFEST__", storage_permission_manifest)
+              android_manifest_xml = android_manifest_xml.replace("__ORIENTATION_MODE__", orientation_mode)
+              
+              with open("app/src/main/AndroidManifest.xml", "w") as f:
+                  f.write(android_manifest_xml.strip())
 
-# Handle Permissions
-camera_permission_manifest = '<uses-permission android:name="android.permission.CAMERA" />' if camera_enabled else ""
-audio_permission_manifest = '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' if microphone_enabled else ""
-notification_permission_manifest = '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' if notifications_enabled else ""
+              # Write SplashActivity.java
+              splash_activity_java_template = """package com.example.runner;
+              import androidx.appcompat.app.AppCompatActivity;
+              import android.content.Intent;
+              import android.os.Bundle;
+              import android.os.Handler;
 
-storage_permission_manifest = ""
-if local_storage_enabled:
-    storage_permission_manifest = """
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    """
+              public class SplashActivity extends AppCompatActivity {
+                  @Override
+                  protected void onCreate(Bundle savedInstanceState) {
+                      super.onCreate(savedInstanceState);
+                      setContentView(R.layout.activity_splash);
+                      
+                      new Handler().postDelayed(new Runnable() {
+                          @Override
+                          public void run() {
+                              Intent intent = new Intent(SplashActivity.this, MainActivity.class);
+                              startActivity(intent);
+                              finish();
+                          }
+                      }, __SPLASH_DURATION__);
+                  }
+              }
+              """
+              splash_activity_java = splash_activity_java_template.replace("__SPLASH_DURATION__", str(splash_duration))
+              with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
+                  f.write(splash_activity_java.strip())
 
-# Rotation preference mapping
-orientation_mode = "unspecified"
-if screen_rotation == "portrait":
-    orientation_mode = "portrait"
-elif screen_rotation == "landscape":
-    orientation_mode = "landscape"
+              # Generate MainActivity.java
+              swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
+              swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
+              progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
+              
+              progress_init_block = "mProgress = findViewById(R.id.progressBar);" if loading_ui_enabled else ""
+              progress_update_block = """if (mProgress != null) {
+                  mProgress.setProgress(newProgress);
+                  if (newProgress == 100) {
+                      mProgress.setVisibility(View.GONE);
+                  } else {
+                      mProgress.setVisibility(View.VISIBLE);
+                  }
+              }""" if loading_ui_enabled else ""
 
-# Write AndroidManifest.xml
-android_manifest_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    __CAMERA_PERMISSION_MANIFEST__
-    __AUDIO_PERMISSION_MANIFEST__
-    __NOTIFICATION_PERMISSION_MANIFEST__
-    __STORAGE_PERMISSION_MANIFEST__
-    
-    <application
-        android:allowBackup="true"
-        android:label="@string/app_name"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher"
-        android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
-        android:theme="@style/AppTheme">
-        
-        <activity
-            android:name="com.example.runner.SplashActivity"
-            android:exported="true"
-            android:theme="@style/SplashTheme"
-            android:screenOrientation="__ORIENTATION_MODE__">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+              local_storage_block = ""
+              if local_storage_enabled:
+                  local_storage_block = """webSettings.setDomStorageEnabled(true);
+                  webSettings.setDatabaseEnabled(true);
+                  webSettings.setAllowFileAccess(true);
+                  webSettings.setAllowContentAccess(true);"""
 
-        <activity
-            android:name="com.example.runner.MainActivity"
-            android:exported="false"
-            android:configChanges="orientation|screenSize|keyboardHidden"
-            android:screenOrientation="__ORIENTATION_MODE__">
-        </activity>
-    </application>
-</manifest>
-"""
-android_manifest_xml = android_manifest_xml_template.replace("__CAMERA_PERMISSION_MANIFEST__", camera_permission_manifest)
-android_manifest_xml = android_manifest_xml.replace("__AUDIO_PERMISSION_MANIFEST__", audio_permission_manifest)
-android_manifest_xml = android_manifest_xml.replace("__NOTIFICATION_PERMISSION_MANIFEST__", notification_permission_manifest)
-android_manifest_xml = android_manifest_xml.replace("__STORAGE_PERMISSION_MANIFEST__", storage_permission_manifest)
-android_manifest_xml = android_manifest_xml.replace("__ORIENTATION_MODE__", orientation_mode)
+              zoom_block = ""
+              if zoom_enabled:
+                  zoom_block = """webSettings.setSupportZoom(true);
+                  webSettings.setBuiltInZoomControls(true);
+                  webSettings.setDisplayZoomControls(false);"""
 
-with open("app/src/main/AndroidManifest.xml", "w") as f:
-    f.write(android_manifest_xml.strip())
+              autoplay_ua_block = ""
+              if autoplay_enabled:
+                  autoplay_ua_block += "webSettings.setMediaPlaybackRequiresUserGesture(false);\n"
+              if pc_mode_enabled:
+                  autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/114.0.0.0 Safari/537.36");
+                  webSettings.setUseWideViewPort(true);
+                  webSettings.setLoadWithOverviewMode(true);"""
 
-# Write SplashActivity.java
-splash_activity_java_template = """package com.example.runner;
-import androidx.appcompat.app.AppCompatActivity;
-import android.content.Intent;
-import android.os.Bundle;
-import android.os.Handler;
+              swipe_refresh_code_block = ""
+              swipe_refresh_stop_code_block = ""
+              if swipe_refresh_enabled:
+                  swipe_refresh_code_block = """mSwipeRefresh = findViewById(R.id.swipeRefreshLayout);
+                  mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+                      @Override
+                      public void onRefresh() {
+                          mWebView.reload();
+                      }
+                  });"""
+                  swipe_refresh_stop_code_block = """if (mSwipeRefresh != null) {
+                      mSwipeRefresh.setRefreshing(false);
+                  }"""
 
-public class SplashActivity extends AppCompatActivity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_splash);
-        
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Intent intent = new Intent(SplashActivity.this, MainActivity.class);
-                startActivity(intent);
-                finish();
-            }
-        }, __SPLASH_DURATION__);
-    }
-}
-"""
-splash_activity_java = splash_activity_java_template.replace("__SPLASH_DURATION__", str(splash_duration))
-with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
-    f.write(splash_activity_java.strip())
+              long_press_code_block = ""
+              if not long_press_enabled:
+                  long_press_code_block = """mWebView.setOnLongClickListener(new View.OnLongClickListener() {
+                      @Override
+                      public boolean onLongClick(View v) {
+                          return true;
+                      }
+                  });
+                  mWebView.setLongClickable(false);"""
 
-# Generate MainActivity.java
-swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
-swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
-progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
+              download_manager_block = """mWebView.setDownloadListener(new DownloadListener() {
+                  @Override
+                  public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                      if (url.startsWith("blob:") || url.startsWith("data:")) {
+                          return;
+                      }
+                      DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+                      request.setMimeType(mimetype);
+                      String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                      request.setTitle(fileName);
+                      request.setDescription("Downloading target assets...");
+                      request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                      request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+                      DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                      if (dm != null) {
+                          dm.enqueue(request);
+                          Toast.makeText(MainActivity.this, "Download started...", Toast.LENGTH_SHORT).show();
+                      }
+                  }
+              });"""
 
-progress_init_block = "mProgress = findViewById(R.id.progressBar);" if loading_ui_enabled else ""
-progress_update_block = """if (mProgress != null) {
-    mProgress.setProgress(newProgress);
-    if (newProgress == 100) {
-        mProgress.setVisibility(View.GONE);
-    } else {
-        mProgress.setVisibility(View.VISIBLE);
-    }
-}""" if loading_ui_enabled else ""
+              permission_manager_block = """ArrayList<String> permissions = new ArrayList<>();
+              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                  permissions.add("android.permission.POST_NOTIFICATIONS");
+              }
+              """
+              if camera_enabled:
+                  permission_manager_block += 'permissions.add(Manifest.permission.CAMERA);\n'
+              if microphone_enabled:
+                  permission_manager_block += 'permissions.add(Manifest.permission.RECORD_AUDIO);\n'
+              if local_storage_enabled:
+                  permission_manager_block += 'permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);\n'
 
-local_storage_block = ""
-if local_storage_enabled:
-    local_storage_block = """webSettings.setDomStorageEnabled(true);
-    webSettings.setDatabaseEnabled(true);
-    webSettings.setAllowFileAccess(true);
-    webSettings.setAllowContentAccess(true);"""
+              permission_manager_block += """
+              if (!permissions.isEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                  ArrayList<String> remaining = new ArrayList<>();
+                  for (String p : permissions) {
+                      if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
+                          remaining.add(p);
+                      }
+                  }
+                  if (!remaining.isEmpty()) {
+                      requestPermissions(remaining.toArray(new String[0]), 101);
+                  }
+              }
+              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                  NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_DEFAULT);
+                  NotificationManager manager = getSystemService(NotificationManager.class);
+                  if (manager != null) {
+                      manager.createNotificationChannel(channel);
+                  }
+              }
+              """
 
-zoom_block = ""
-if zoom_enabled:
-    zoom_block = """webSettings.setSupportZoom(true);
-    webSettings.setBuiltInZoomControls(true);
-    webSettings.setDisplayZoomControls(false);"""
+              main_activity_java_template = """package com.example.runner;
+              import android.Manifest;
+              import androidx.appcompat.app.AppCompatActivity;
+              import android.app.Activity;
+              import android.app.DownloadManager;
+              import android.app.NotificationChannel;
+              import android.app.NotificationManager;
+              import android.content.pm.PackageManager;
+              import android.content.ClipData;
+              import android.content.Intent;
+              import android.net.Uri;
+              import android.os.Build;
+              import android.os.Bundle;
+              import android.os.Environment;
+              import android.view.View;
+              import android.view.Window;
+              import android.view.WindowInsets;
+              import android.view.WindowInsetsController;
+              import android.view.WindowManager;
+              import android.webkit.DownloadListener;
+              import android.webkit.PermissionRequest;
+              import android.webkit.URLUtil;
+              import android.webkit.ValueCallback;
+              import android.webkit.WebChromeClient;
+              import android.webkit.WebSettings;
+              import android.webkit.WebView;
+              import android.webkit.WebViewClient;
+              import android.widget.ProgressBar;
+              import android.widget.Toast;
+              import androidx.core.content.ContextCompat;
+              import androidx.core.app.NotificationCompat;
+              import android.content.ContentValues;
+              import android.provider.MediaStore;
+              import java.io.OutputStream;
+              import android.util.Base64;
+              import android.webkit.JavascriptInterface;
+              import java.util.ArrayList;
+              __SWIPE_IMPORT__
 
-autoplay_ua_block = ""
-if autoplay_enabled:
-    autoplay_ua_block += "webSettings.setMediaPlaybackRequiresUserGesture(false);\n"
-if pc_mode_enabled:
-    autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/114.0.0.0 Safari/537.36");
-    webSettings.setUseWideViewPort(true);
-    webSettings.setLoadWithOverviewMode(true);"""
+              public class MainActivity extends AppCompatActivity {
+                  private WebView mWebView;
+                  private ValueCallback<Uri[]> mUploadMessage;
+                  private final static int FILECHOOSER_RESULTCODE = 1;
+                  __SWIPE_DECLARATION__
+                  __PROGRESS_DECLARATION__
 
-swipe_refresh_code_block = ""
-swipe_refresh_stop_code_block = ""
-if swipe_refresh_enabled:
-    swipe_refresh_code_block = """mSwipeRefresh = findViewById(R.id.swipeRefreshLayout);
-    mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-        @Override
-        public void onRefresh() {
-            mWebView.reload();
-        }
-    });"""
-    swipe_refresh_stop_code_block = """if (mSwipeRefresh != null) {
-        mSwipeRefresh.setRefreshing(false);
-    }"""
+                  @Override
+                  protected void onCreate(Bundle savedInstanceState) {
+                      super.onCreate(savedInstanceState);
+                      setContentView(R.layout.activity_main);
 
-long_press_code_block = ""
-if not long_press_enabled:
-    long_press_code_block = """mWebView.setOnLongClickListener(new View.OnLongClickListener() {
-        @Override
-        public boolean onLongClick(View v) {
-            return true;
-        }
-    });
-    mWebView.setLongClickable(false);"""
+                      mWebView = findViewById(R.id.webview);
+                      __PROGRESS_INIT__
 
-download_manager_block = """mWebView.setDownloadListener(new DownloadListener() {
-    @Override
-    public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-        if (url.startsWith("blob:") || url.startsWith("data:")) {
-            return;
-        }
-        DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-        request.setMimeType(mimetype);
-        String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);
-        request.setTitle(fileName);
-        request.setDescription("Downloading target assets...");
-        request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-        DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-        if (dm != null) {
-            dm.enqueue(request);
-            Toast.makeText(MainActivity.this, "Download started...", Toast.LENGTH_SHORT).show();
-        }
-    }
-});"""
+                      WebSettings webSettings = mWebView.getSettings();
+                      webSettings.setJavaScriptEnabled(true);
+                      __LOCAL_STORAGE__
+                      __ZOOM__
+                      __AUTOPLAY_UA__
+                      __SWIPE_REFRESH_CODE__
+                      __LONG_PRESS__
+                      __DOWNLOAD_MANAGER__
 
-permission_manager_block = """ArrayList<String> permissions = new ArrayList<>();
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-    permissions.add("android.permission.POST_NOTIFICATIONS");
-}
-"""
-if camera_enabled:
-    permission_manager_block += 'permissions.add(Manifest.permission.CAMERA);\n'
-if microphone_enabled:
-    permission_manager_block += 'permissions.add(Manifest.permission.RECORD_AUDIO);\n'
-if local_storage_enabled:
-    permission_manager_block += 'permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);\n'
+                      mWebView.setWebViewClient(new WebViewClient() {
+                          @Override
+                          public void onPageFinished(WebView view, String url) {
+                              super.onPageFinished(view, url);
+                              __SWIPE_REFRESH_STOP_CODE__
+                          }
+                      });
 
-permission_manager_block += """
-if (!permissions.isEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-    ArrayList<String> remaining = new ArrayList<>();
-    for (String p : permissions) {
-        if (checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
-            remaining.add(p);
-        }
-    }
-    if (!remaining.isEmpty()) {
-        requestPermissions(remaining.toArray(new String[0]), 101);
-    }
-}
-if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-    NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_DEFAULT);
-    NotificationManager manager = getSystemService(NotificationManager.class);
-    if (manager != null) {
-        manager.createNotificationChannel(channel);
-    }
-}
-"""
+                      mWebView.setWebChromeClient(new WebChromeClient() {
+                          @Override
+                          public void onPermissionRequest(final PermissionRequest request) {
+                              runOnUiThread(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      try {
+                                          request.grant(request.getResources());
+                                      } catch (Exception e) {
+                                          e.printStackTrace();
+                                      }
+                                  }
+                              });
+                          }
+                          @Override
+                          public void onProgressChanged(WebView view, int newProgress) {
+                              super.onProgressChanged(view, newProgress);
+                              __PROGRESS_UPDATE__
+                          }
+                          @Override
+                          public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
+                              if (mUploadMessage != null) {
+                                  mUploadMessage.onReceiveValue(null);
+                              }
+                              mUploadMessage = filePathCallback;
+                              Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                              intent.addCategory(Intent.CATEGORY_OPENABLE);
+                              intent.setType("*/*");
+                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                                  intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                              }
+                              try {
+                                  startActivityForResult(Intent.createChooser(intent, "Select File"), FILECHOOSER_RESULTCODE);
+                              } catch (Exception e) {
+                                  mUploadMessage = null;
+                                  return false;
+                              }
+                              return true;
+                          }
+                      });
 
-main_activity_java_template = """package com.example.runner;
-import android.Manifest;
-import androidx.appcompat.app.AppCompatActivity;
-import android.app.Activity;
-import android.app.DownloadManager;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.content.pm.PackageManager;
-import android.content.ClipData;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Environment;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowInsets;
-import android.view.WindowInsetsController;
-import android.view.WindowManager;
-import android.webkit.DownloadListener;
-import android.webkit.PermissionRequest;
-import android.webkit.URLUtil;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.ProgressBar;
-import android.widget.Toast;
-import androidx.core.content.ContextCompat;
-import androidx.core.app.NotificationCompat;
-import android.content.ContentValues;
-import android.provider.MediaStore;
-import java.io.OutputStream;
-import android.util.Base64;
-import android.webkit.JavascriptInterface;
-import java.util.ArrayList;
-__SWIPE_IMPORT__
+                      mWebView.setBackgroundColor(0);
+                      __PERMISSION_MANAGER__
+                      mWebView.addJavascriptInterface(this, "AndroidApp");
+                      mWebView.loadUrl("file:///android_asset/__HOMEPAGE__");
+                  }
 
-public class MainActivity extends AppCompatActivity {
-    private WebView mWebView;
-    private ValueCallback<Uri[]> mUploadMessage;
-    private final static int FILECHOOSER_RESULTCODE = 1;
-    __SWIPE_DECLARATION__
-    __PROGRESS_DECLARATION__
+                  @JavascriptInterface
+                  public void showNotification(String title, String message) {
+                      NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                              .setSmallIcon(R.mipmap.ic_launcher)
+                              .setContentTitle(title)
+                              .setContentText(message)
+                              .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                              .setAutoCancel(true);
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+                      NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                      if (manager != null) {
+                          manager.notify((int) System.currentTimeMillis(), builder.build());
+                      }
+                  }
 
-        mWebView = findViewById(R.id.webview);
-        __PROGRESS_INIT__
+                  @JavascriptInterface
+                  public void saveBase64File(String base64Data, String mimeType, String fileName) {
+                      try {
+                          byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
+                          OutputStream os;
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                              ContentValues values = new ContentValues();
+                              values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                              values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
+                              values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                              Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                              if (uri == null) {
+                                  runOnUiThread(() -> Toast.makeText(this, "Failed to create download target.", Toast.LENGTH_SHORT).show());
+                                  return;
+                              }
+                              os = getContentResolver().openOutputStream(uri);
+                          } else {
+                              java.io.File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                              java.io.File file = new java.io.File(downloadDir, fileName);
+                              os = new java.io.FileOutputStream(file);
+                          }
+                          if (os != null) {
+                              os.write(fileBytes);
+                              os.close();
+                              runOnUiThread(() -> Toast.makeText(this, "File saved to Downloads folder!", Toast.LENGTH_LONG).show());
+                              showNotification("Download Completed", fileName + " saved to Downloads.");
+                          }
+                      } catch (Exception e) {
+                          e.printStackTrace();
+                          runOnUiThread(() -> Toast.makeText(this, "Error saving file: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                      }
+                  }
 
-        WebSettings webSettings = mWebView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        __LOCAL_STORAGE__
-        __ZOOM__
-        __AUTOPLAY_UA__
-        __SWIPE_REFRESH_CODE__
-        __LONG_PRESS__
-        __DOWNLOAD_MANAGER__
+                  @Override
+                  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                      super.onActivityResult(requestCode, resultCode, data);
+                      if (requestCode == FILECHOOSER_RESULTCODE) {
+                          if (mUploadMessage == null) return;
+                          Uri[] results = null;
+                          if (resultCode == Activity.RESULT_OK) {
+                              if (data != null) {
+                                  String dataString = data.getDataString();
+                                  ClipData clipData = data.getClipData();
+                                  if (clipData != null) {
+                                      results = new Uri[clipData.getItemCount()];
+                                      for (int i = 0; i < clipData.getItemCount(); i++) {
+                                          ClipData.Item item = clipData.getItemAt(i);
+                                          results[i] = item.getUri();
+                                      }
+                                  }
+                                  if (dataString != null) {
+                                      results = new Uri[]{Uri.parse(dataString)};
+                                  }
+                              }
+                          }
+                          mUploadMessage.onReceiveValue(results);
+                          mUploadMessage = null;
+                      }
+                  }
 
-        mWebView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                __SWIPE_REFRESH_STOP_CODE__
-            }
-        });
+                  @Override
+                  public void onBackPressed() {
+                      mWebView.evaluateJavascript("javascript:if(window.onBackPressed){window.onBackPressed();}else{'default';}", new ValueCallback<String>() {
+                          @Override
+                          public void onReceiveValue(String value) {
+                              if (value == null || value.equals("\\"default\\"") || value.equals("null") || value.equals("false")) {
+                                  if (mWebView.canGoBack()) {
+                                      mWebView.goBack();
+                                  } else {
+                                      showExitDialog();
+                                  }
+                              }
+                          }
+                      });
+                  }
 
-        mWebView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public void onPermissionRequest(final PermissionRequest request) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            request.grant(request.getResources());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            }
-            @Override
-            public void onProgressChanged(WebView view, int newProgress) {
-                super.onProgressChanged(view, newProgress);
-                __PROGRESS_UPDATE__
-            }
-            @Override
-            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
-                if (mUploadMessage != null) {
-                    mUploadMessage.onReceiveValue(null);
-                }
-                mUploadMessage = filePathCallback;
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.setType("*/*");
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                }
-                try {
-                    startActivityForResult(Intent.createChooser(intent, "Select File"), FILECHOOSER_RESULTCODE);
-                } catch (Exception e) {
-                    mUploadMessage = null;
-                    return false;
-                }
-                return true;
-            }
-        });
+                  private void showExitDialog() {
+                      androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+                      builder.setTitle("Exit Application");
+                      builder.setMessage("Are you sure you want to exit?");
+                      builder.setPositiveButton("Exit", new android.content.DialogInterface.OnClickListener() {
+                          @Override
+                          public void onClick(android.content.DialogInterface dialog, int which) {
+                              finish();
+                          }
+                      });
+                      builder.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {
+                          @Override
+                          public void onClick(android.content.DialogInterface dialog, int which) {
+                              dialog.dismiss();
+                          }
+                      });
+                      androidx.appcompat.app.AlertDialog dialog = builder.create();
+                      dialog.show();
+                      int colorPrimary = ContextCompat.getColor(MainActivity.this, R.color.colorPrimary);
+                      dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(colorPrimary);
+                      dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
+                  }
+              }
+              """
+              
+              main_activity_java = main_activity_java_template.replace("__SWIPE_IMPORT__", swipe_import_block)
+              main_activity_java = main_activity_java.replace("__SWIPE_DECLARATION__", swipe_declaration_block)
+              main_activity_java = main_activity_java.replace("__PROGRESS_DECLARATION__", progress_declaration_block)
+              main_activity_java = main_activity_java.replace("__PROGRESS_INIT__", progress_init_block)
+              main_activity_java = main_activity_java.replace("__LOCAL_STORAGE__", local_storage_block)
+              main_activity_java = main_activity_java.replace("__ZOOM__", zoom_block)
+              main_activity_java = main_activity_java.replace("__AUTOPLAY_UA__", autoplay_ua_block)
+              main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_CODE__", swipe_refresh_code_block)
+              main_activity_java = main_activity_java.replace("__LONG_PRESS__", long_press_code_block)
+              main_activity_java = main_activity_java.replace("__DOWNLOAD_MANAGER__", download_manager_block)
+              main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_STOP_CODE__", swipe_refresh_stop_code_block)
+              main_activity_java = main_activity_java.replace("__PROGRESS_UPDATE__", progress_update_block)
+              main_activity_java = main_activity_java.replace("__PERMISSION_MANAGER__", permission_manager_block)
+              main_activity_java = main_activity_java.replace("__HOMEPAGE__", homepage)
 
-        mWebView.setBackgroundColor(0);
-        __PERMISSION_MANAGER__
-        mWebView.addJavascriptInterface(this, "AndroidApp");
-        mWebView.loadUrl("file:///android_asset/__HOMEPAGE__");
-    }
+              with open("app/src/main/java/com/example/runner/MainActivity.java", "w") as f:
+                  f.write(main_activity_java.strip())
 
-    @JavascriptInterface
-    public void showNotification(String title, String message) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle(title)
-                .setContentText(message)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setAutoCancel(true);
+              # Process Custom Launcher and Splash Icons with Pillow natively
+              icon_src = "app/src/main/assets/_app_icon.png"
+              if os.path.exists(icon_src):
+                  print("Custom Launcher icon found! Compiling res mipmaps with Pillow...")
+                  sizes = {
+                      "mipmap-mdpi": 48,
+                      "mipmap-hdpi": 72,
+                      "mipmap-xhdpi": 96,
+                      "mipmap-xxhdpi": 144,
+                      "mipmap-xxxhdpi": 192
+                  }
+                  try:
+                      with Image.open(icon_src) as img:
+                          for folder, size in sizes.items():
+                              dest_dir = f"app/src/main/res/{folder}"
+                              os.makedirs(dest_dir, exist_ok=True)
+                              resized_img = img.resize((size, size), Image.Resampling.LANCZOS)
+                              resized_img.save(f"{dest_dir}/ic_launcher.png")
+                  except Exception as e:
+                      print(f"Error resizing custom launcher icon: {e}")
+              else:
+                  print("Using default fallback launcher icon...")
+                  dest_dir = "app/src/main/res/mipmap-xxhdpi"
+                  os.makedirs(dest_dir, exist_ok=True)
+                  try:
+                      url = "https://raw.githubusercontent.com/android/platform_development/master/apps/Development/res/mipmap-xxhdpi/ic_launcher_android.png"
+                      urllib.request.urlretrieve(url, f"{dest_dir}/ic_launcher.png")
+                  except Exception as e:
+                      print(f"Failed to fetch default icon: {e}")
 
-        NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.notify((int) System.currentTimeMillis(), builder.build());
-        }
-    }
-
-    @JavascriptInterface
-    public void saveBase64File(String base64Data, String mimeType, String fileName) {
-        try {
-            byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
-            OutputStream os;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ContentValues values = new ContentValues();
-                values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
-                values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
-                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-                if (uri == null) {
-                    runOnUiThread(() -> Toast.makeText(this, "Failed to create download target.", Toast.LENGTH_SHORT).show());
-                    return;
-                }
-                os = getContentResolver().openOutputStream(uri);
-            } else {
-                java.io.File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                java.io.File file = new java.io.File(downloadDir, fileName);
-                os = new java.io.FileOutputStream(file);
-            }
-            if (os != null) {
-                os.write(fileBytes);
-                os.close();
-                runOnUiThread(() -> Toast.makeText(this, "File saved to Downloads folder!", Toast.LENGTH_LONG).show());
-                showNotification("Download Completed", fileName + " saved to Downloads.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            runOnUiThread(() -> Toast.makeText(this, "Error saving file: " + e.getMessage(), Toast.LENGTH_LONG).show());
-        }
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == FILECHOOSER_RESULTCODE) {
-            if (mUploadMessage == null) return;
-            Uri[] results = null;
-            if (resultCode == Activity.RESULT_OK) {
-                if (data != null) {
-                    String dataString = data.getDataString();
-                    ClipData clipData = data.getClipData();
-                    if (clipData != null) {
-                        results = new Uri[clipData.getItemCount()];
-                        for (int i = 0; i < clipData.getItemCount(); i++) {
-                            ClipData.Item item = clipData.getItemAt(i);
-                            results[i] = item.getUri();
-                        }
-                    }
-                    if (dataString != null) {
-                        results = new Uri[]{Uri.parse(dataString)};
-                    }
-                }
-            }
-            mUploadMessage.onReceiveValue(results);
-            mUploadMessage = null;
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        mWebView.evaluateJavascript("javascript:if(window.onBackPressed){window.onBackPressed();}else{'default';}", new ValueCallback<String>() {
-            @Override
-            public void onReceiveValue(String value) {
-                if (value == null || value.equals("\\"default\\"") || value.equals("null") || value.equals("false")) {
-                    if (mWebView.canGoBack()) {
-                        mWebView.goBack();
-                    } else {
-                        showExitDialog();
-                    }
-                }
-            }
-        });
-    }
-
-    private void showExitDialog() {
-        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
-        builder.setTitle("Exit Application");
-        builder.setMessage("Are you sure you want to exit?");
-        builder.setPositiveButton("Exit", new android.content.DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(android.content.DialogInterface dialog, int which) {
-                finish();
-            }
-        });
-        builder.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(android.content.DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        androidx.appcompat.app.AlertDialog dialog = builder.create();
-        dialog.show();
-        int colorPrimary = ContextCompat.getColor(MainActivity.this, R.color.colorPrimary);
-        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(colorPrimary);
-        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
-    }
-}
-"""
-
-main_activity_java = main_activity_java_template.replace("__SWIPE_IMPORT__", swipe_import_block)
-main_activity_java = main_activity_java.replace("__SWIPE_DECLARATION__", swipe_declaration_block)
-main_activity_java = main_activity_java.replace("__PROGRESS_DECLARATION__", progress_declaration_block)
-main_activity_java = main_activity_java.replace("__PROGRESS_INIT__", progress_init_block)
-main_activity_java = main_activity_java.replace("__LOCAL_STORAGE__", local_storage_block)
-main_activity_java = main_activity_java.replace("__ZOOM__", zoom_block)
-main_activity_java = main_activity_java.replace("__AUTOPLAY_UA__", autoplay_ua_block)
-main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_CODE__", swipe_refresh_code_block)
-main_activity_java = main_activity_java.replace("__LONG_PRESS__", long_press_code_block)
-main_activity_java = main_activity_java.replace("__DOWNLOAD_MANAGER__", download_manager_block)
-main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_STOP_CODE__", swipe_refresh_stop_code_block)
-main_activity_java = main_activity_java.replace("__PROGRESS_UPDATE__", progress_update_block)
-main_activity_java = main_activity_java.replace("__PERMISSION_MANAGER__", permission_manager_block)
-main_activity_java = main_activity_java.replace("__HOMEPAGE__", homepage)
-
-with open("app/src/main/java/com/example/runner/MainActivity.java", "w") as f:
-    f.write(main_activity_java.strip())
-
-# Process Custom Launcher and Splash Icons with Pillow natively
-icon_src = "app/src/main/assets/_app_icon.png"
-if os.path.exists(icon_src):
-    print("Custom Launcher icon found! Compiling res mipmaps with Pillow...")
-    sizes = {
-        "mipmap-mdpi": 48,
-        "mipmap-hdpi": 72,
-        "mipmap-xhdpi": 96,
-        "mipmap-xxhdpi": 144,
-        "mipmap-xxxhdpi": 192
-    }
-    try:
-        with Image.open(icon_src) as img:
-            for folder, size in sizes.items():
-                dest_dir = f"app/src/main/res/{folder}"
-                os.makedirs(dest_dir, exist_ok=True)
-                resized_img = img.resize((size, size), Image.Resampling.LANCZOS)
-                resized_img.save(f"{dest_dir}/ic_launcher.png")
-    except Exception as e:
-        print(f"Error resizing custom launcher icon: {e}")
-else:
-    print("Using default fallback launcher icon...")
-    dest_dir = "app/src/main/res/mipmap-xxhdpi"
-    os.makedirs(dest_dir, exist_ok=True)
-    try:
-        url = "https://raw.githubusercontent.com/android/platform_development/master/apps/Development/res/mipmap-xxhdpi/ic_launcher_android.png"
-        urllib.request.urlretrieve(url, f"{dest_dir}/ic_launcher.png")
-    except Exception as e:
-        print(f"Failed to fetch default icon: {e}")
-
-splash_src = "app/src/main/assets/_splash_icon.png"
-if os.path.exists(splash_src):
-    print("Custom splash image found! Compiling drawable resources with Pillow...")
-    os.makedirs("app/src/main/res/drawable", exist_ok=True)
-    try:
-        with Image.open(splash_src) as img:
-            resized_img = img.resize((512, 512), Image.Resampling.LANCZOS)
-            resized_img.save("app/src/main/res/drawable/splash_icon.png")
-    except Exception as e:
-        print(f"Error resizing custom splash icon: {e}")
-EOF
+              splash_src = "app/src/main/assets/_splash_icon.png"
+              if os.path.exists(splash_src):
+                  print("Custom splash image found! Compiling drawable resources with Pillow...")
+                  os.makedirs("app/src/main/res/drawable", exist_ok=True)
+                  try:
+                      with Image.open(splash_src) as img:
+                          resized_img = img.resize((512, 512), Image.Resampling.LANCZOS)
+                          resized_img.save("app/src/main/res/drawable/splash_icon.png")
+                  except Exception as e:
+                      print(f"Error resizing custom splash icon: {e}")
+          EOF
           python3 build_assets.py
 
       - name: Write strings.xml resource values
@@ -855,7 +854,7 @@ EOF
           echo "TAG_NAME=$TAG" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release and Upload APK
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag_gen.outputs.TAG_NAME }}
           name: "Release: ${{ env.APP_NAME }} (v${{ env.VERSION_NAME }})"
