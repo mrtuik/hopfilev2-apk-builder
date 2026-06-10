@@ -365,7 +365,7 @@ jobs:
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
 
-          # Generate MainActivity.java (Upgraded for Storage Access Framework & Immersive back press exit dialog)
+          # Generate MainActivity.java (Double curly braces properly escaped for nested JS blocks)
           swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
           swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
           progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
@@ -613,7 +613,7 @@ jobs:
 
               @Override
               public void onBackPressed() {{
-                  mWebView.evaluateJavascript("javascript:if(window.onBackPressed){window.onBackPressed();}else{'default';}", new ValueCallback<String>() {{
+                  mWebView.evaluateJavascript("javascript:if(window.onBackPressed){{window.onBackPressed();}}else{{'default';}}", new ValueCallback<String>() {{
                       @Override
                       public void onReceiveValue(String value) {{
                           if (value == null || value.equals("\\"default\\"") || value.equals("null") || value.equals("false")) {{
