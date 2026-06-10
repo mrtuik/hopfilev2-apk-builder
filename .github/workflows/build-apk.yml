@@ -719,6 +719,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setAutoCancel(true);
 
@@ -731,6 +733,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setStyle(new NotificationCompat.BigTextStyle()
                                   .bigText(bigText)
                                   .setSummaryText(summary))
@@ -750,6 +754,8 @@ jobs:
                               .setSmallIcon(getApplicationInfo().icon)
                               .setContentTitle(title)
                               .setContentText(message)
+                              .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                              .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                               .setStyle(new NotificationCompat.BigPictureStyle()
                                       .bigPicture(bitmap))
                               .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -769,7 +775,9 @@ jobs:
                       NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
                               .setSmallIcon(getApplicationInfo().icon)
                               .setContentTitle(title)
-                              .setContentText(message);
+                              .setContentText(message)
+                              .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                              .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
                       NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
                       for (int i = 0; i < jsonArray.length(); i++) {
@@ -798,6 +806,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .addAction(android.R.drawable.ic_menu_send, buttonText, pIntent)
                           .setAutoCancel(true);
@@ -814,6 +824,8 @@ jobs:
                   NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
                           .setSmallIcon(getApplicationInfo().icon)
                           .setStyle(style)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setAutoCancel(true);
 
@@ -829,6 +841,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setPriority(NotificationCompat.PRIORITY_MAX)
                           .setCategory(NotificationCompat.CATEGORY_CALL)
                           .setFullScreenIntent(pIntent, true)
@@ -840,12 +854,14 @@ jobs:
 
               public void showProgressNotification(String title, String message, int progress, int max, boolean indeterminate, int id) {
                   NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "progress_channel")
-                          .setSmallIcon(getApplicationInfo().icon)
-                          .setContentTitle(title)
-                          .setContentText(message)
-                          .setOngoing(progress < max)
-                          .setPriority(NotificationCompat.PRIORITY_LOW)
-                          .setProgress(max, progress, indeterminate);
+                      .setSmallIcon(getApplicationInfo().icon)
+                      .setContentTitle(title)
+                      .setContentText(message)
+                      .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                      .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                      .setOngoing(progress < max)
+                      .setPriority(NotificationCompat.PRIORITY_LOW)
+                      .setProgress(max, progress, indeterminate);
 
                   NotificationManagerCompat manager = NotificationManagerCompat.from(this);
                   manager.notify(id, builder.build());
@@ -879,6 +895,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setPriority(NotificationCompat.PRIORITY_MIN)
                           .setAutoCancel(true);
 
@@ -891,6 +909,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setPriority(NotificationCompat.PRIORITY_HIGH)
                           .setDefaults(NotificationCompat.DEFAULT_ALL)
                           .setAutoCancel(true);
@@ -904,6 +924,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setOngoing(true);
 
@@ -918,6 +940,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title1)
                           .setContentText(text1)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setGroup(groupKey)
                           .setAutoCancel(true);
 
@@ -925,6 +949,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title2)
                           .setContentText(text2)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setGroup(groupKey)
                           .setAutoCancel(true);
 
@@ -932,6 +958,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle("Group Summary")
                           .setContentText("You have new group updates")
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setGroup(groupKey)
                           .setGroupSummary(true)
                           .setAutoCancel(true);
@@ -949,6 +977,8 @@ jobs:
 
                   NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
                           .setSmallIcon(getApplicationInfo().icon)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setCustomContentView(remoteViews)
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setAutoCancel(true);
@@ -962,6 +992,8 @@ jobs:
                           .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle("App Alert")
                           .setContentText("Active Badge count set to " + count)
+                          .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                          .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                           .setNumber(count)
                           .setAutoCancel(true);
 
@@ -1322,6 +1354,8 @@ jobs:
                           builder.setSmallIcon(mContext.getApplicationInfo().icon)
                                   .setContentTitle(title)
                                   .setContentText(message)
+                                  .setColor(ContextCompat.getColor(mContext, R.color.colorPrimary))
+                                  .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                                   .setAutoCancel(true);
 
                           if (json.optBoolean("ongoing", false)) {
@@ -1443,6 +1477,8 @@ jobs:
                       builder.setSmallIcon(context.getApplicationInfo().icon)
                               .setContentTitle(title)
                               .setContentText(message)
+                              .setColor(ContextCompat.getColor(context, R.color.colorPrimary))
+                              .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                               .setAutoCancel(true)
                               .setContentIntent(pIntent);
 
@@ -1477,6 +1513,7 @@ jobs:
 
                       builder.setSmallIcon(getApplicationInfo().icon)
                               .setOngoing(true)
+                              .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
                               .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
                       Intent notificationIntent = new Intent(this, MainActivity.class);
@@ -1490,45 +1527,63 @@ jobs:
 
                           builder.setContentTitle(trackName != null ? trackName : "No Audio Playing")
                                   .setContentText(artistName != null ? artistName : "Unknown Track")
-                                  .setChannelId("media_channel");
+                                  .setChannelId("media_channel")
+                                  .setCategory(NotificationCompat.CATEGORY_TRANSPORT);
+
+                          Intent prevIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "PREV_ACTION");
+                          android.app.PendingIntent pPrev = android.app.PendingIntent.getActivity(this, 10, prevIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                          Intent playIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "TOGGLE_PLAY_ACTION");
+                          android.app.PendingIntent pPlay = android.app.PendingIntent.getActivity(this, 11, playIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                          Intent nextIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "NEXT_ACTION");
+                          android.app.PendingIntent pNext = android.app.PendingIntent.getActivity(this, 12, nextIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                          Intent stopIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "STOP_ACTION");
+                          android.app.PendingIntent pStop = android.app.PendingIntent.getActivity(this, 13, stopIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                          builder.addAction(android.R.drawable.ic_media_previous, "Previous", pPrev);
+                          if (isPlaying) {
+                              builder.addAction(android.R.drawable.ic_media_pause, "Pause", pPlay);
+                          } else {
+                              builder.addAction(android.R.drawable.ic_media_play, "Play", pPlay);
+                          }
+                          builder.addAction(android.R.drawable.ic_media_next, "Next", pNext);
+                          builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", pStop);
 
                           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                               builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                                      .setShowActionsInCompactView(0, 1, 2)
                                       .setMediaSession(android.support.v4.media.session.MediaSessionCompat.Token.fromToken(mMediaSession.getSessionToken())));
-
-                              Intent playIntent = new Intent(this, MainActivity.class).putExtra("action", "toggle_play");
-                              android.app.PendingIntent pPlay = android.app.PendingIntent.getActivity(this, 1, playIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
-
-                              if (isPlaying) {
-                                  builder.addAction(android.R.drawable.ic_media_pause, "Pause", pPlay);
-                              } else {
-                                  builder.addAction(android.R.drawable.ic_media_play, "Play", pPlay);
-                              }
                           }
                       } else if (taskType.equals("recording")) {
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "Audio Recording Active")
                                   .setContentText(message != null ? message : "Recording live audio in background...")
-                                  .setSmallIcon(android.R.drawable.presence_video_busy);
+                                  .setSmallIcon(android.R.drawable.presence_video_busy)
+                                  .setCategory(NotificationCompat.CATEGORY_SERVICE);
                       } else if (taskType.equals("download")) {
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "File Download Service")
                                   .setContentText(message != null ? message : "Downloading system files...")
-                                  .setSmallIcon(android.R.drawable.stat_sys_download);
+                                  .setSmallIcon(android.R.drawable.stat_sys_download)
+                                  .setCategory(NotificationCompat.CATEGORY_PROGRESS);
                       } else if (taskType.equals("upload")) {
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "Upload Service Active")
                                   .setContentText(message != null ? message : "Uploading data package to cloud server...")
-                                  .setSmallIcon(android.R.drawable.stat_sys_upload);
+                                  .setSmallIcon(android.R.drawable.stat_sys_upload)
+                                  .setCategory(NotificationCompat.CATEGORY_PROGRESS);
                       } else if (taskType.equals("background_task")) {
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "Background Task Running")
                                   .setContentText(message != null ? message : "Processing synchronized database pipelines...")
-                                  .setSmallIcon(android.R.drawable.stat_notify_sync);
+                                  .setSmallIcon(android.R.drawable.stat_notify_sync)
+                                  .setCategory(NotificationCompat.CATEGORY_SERVICE);
                       }
 
                       startForeground(2002, builder.build());
