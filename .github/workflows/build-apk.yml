@@ -326,14 +326,14 @@ jobs:
           with open("app/src/main/AndroidManifest.xml", "w") as f:
               f.write(android_manifest_xml.strip())
 
-          # Write SplashActivity.java
+          # Write SplashActivity.java (Upgraded to AppCompatActivity to avoid runtime crashes)
           splash_activity_java = f"""package com.example.runner;
-          import android.app.Activity;
+          import androidx.appcompat.app.AppCompatActivity;
           import android.content.Intent;
           import android.os.Bundle;
           import android.os.Handler;
 
-          public class SplashActivity extends Activity {{
+          public class SplashActivity extends AppCompatActivity {{
               @Override
               protected void onCreate(Bundle savedInstanceState) {{
                   super.onCreate(savedInstanceState);
@@ -353,7 +353,7 @@ jobs:
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
 
-          # Generate MainActivity.java with native web implementations
+          # Generate MainActivity.java with native web implementations (Upgraded to AppCompatActivity)
           swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
           swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
           progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
@@ -370,7 +370,7 @@ jobs:
 
           fullscreen_block = ""
           if fullscreen_enabled:
-              fullscreen_block = """requestWindowFeature(Window.FEATURE_NO_TITLE);
+              fullscreen_block = """
               getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                   getWindow().setDecorFitsSystemWindows(false);
@@ -386,9 +386,6 @@ jobs:
                       | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                   );
               }"""
-          elif hide_title_bar:
-              fullscreen_block = """requestWindowFeature(Window.FEATURE_NO_TITLE);
-              getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);"""
 
           local_storage_block = ""
           if local_storage_enabled:
@@ -409,7 +406,7 @@ jobs:
           if autoplay_enabled:
               autoplay_ua_block += "webSettings.setMediaPlaybackRequiresUserGesture(false);\n"
           if pc_mode_enabled:
-              autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/114.0.0.0 Safari/537.36");
+              autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
               webSettings.setUseWideViewPort(true);
               webSettings.setLoadWithOverviewMode(true);"""
 
@@ -488,7 +485,7 @@ jobs:
 
           main_activity_java = f"""package com.example.runner;
           import android.Manifest;
-          import android.app.Activity;
+          import androidx.appcompat.app.AppCompatActivity;
           import android.app.DownloadManager;
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
@@ -514,7 +511,7 @@ jobs:
           import java.util.ArrayList;
           {swipe_import_block}
 
-          public class MainActivity extends Activity {{
+          public class MainActivity extends AppCompatActivity {{
               private WebView mWebView;
               {swipe_declaration_block}
               {progress_declaration_block}
