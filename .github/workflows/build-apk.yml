@@ -405,7 +405,9 @@ jobs:
               local_storage_block = """webSettings.setDomStorageEnabled(true);
               webSettings.setDatabaseEnabled(true);
               webSettings.setAllowFileAccess(true);
-              webSettings.setAllowContentAccess(true);"""
+              webSettings.setAllowContentAccess(true);
+              webSettings.setAllowFileAccessFromFileURLs(true);
+              webSettings.setAllowUniversalAccessFromFileURLs(true);"""
 
           zoom_block = ""
           if zoom_enabled:
@@ -443,7 +445,7 @@ jobs:
                       return true;
                   }
               });
-              mWebView.setLongClickable(false);"""
+                  mWebView.setLongClickable(false);"""
 
           download_manager_block = """mWebView.setDownloadListener(new DownloadListener() {
               @Override
