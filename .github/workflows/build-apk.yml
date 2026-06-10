@@ -775,6 +775,11 @@ jobs:
               }
 
               @Override
+              protected void onResult(int requestCode, int resultCode, Intent data) {
+                  // Deprecated stub removed safely
+              }
+
+              @Override
               protected void onNewIntent(Intent intent) {
                   super.onNewIntent(intent);
                   setIntent(intent);
