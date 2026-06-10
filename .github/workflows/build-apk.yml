@@ -385,7 +385,7 @@ jobs:
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
 
-          # Generate MainActivity.java (Exhaustive imports mapping to avoid "cannot find symbol" compilation errors)
+          # Generate MainActivity.java
           swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
           swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
           progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
@@ -488,7 +488,7 @@ jobs:
           }
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
               NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_DEFAULT);
-              NotificationManager manager = getSystemService(NotificationManager.class);
+              NotificationManager manager = (NotificationManager) getSystemService(NotificationManager.class);
               if (manager != null) {
                   manager.createNotificationChannel(channel);
               }
@@ -640,7 +640,7 @@ jobs:
                                   }
                               }
                               if (dataString != null) {
-                                  results = new Uri[]{{Uri.parse(dataString)}};
+                                  results = new Uri[]{Uri.parse(dataString)};
                               }
                           }
                       }
@@ -744,7 +744,7 @@ jobs:
                           contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
 
                           ContentResolver resolver = getContentResolver();
-                          Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues);
+                          Uri uri = resolver.insert(Uri.parse("content://media/external/downloads"), contentValues);
 
                           if (uri != null) {
                               OutputStream outputStream = resolver.openOutputStream(uri);
