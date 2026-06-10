@@ -207,8 +207,8 @@ jobs:
           with open("app/src/main/res/values/styles.xml", "w") as f:
               f.write(styles_xml.strip())
 
-          # Write activity_splash.xml
-          splash_icon_visibility = "visible" if has_custom_splash else "gone"
+          # Write activity_splash.xml (Dynamic Splash lox/fallback launcher asset config)
+          splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
           activity_splash_xml = f"""<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -219,8 +219,8 @@ jobs:
                   android:layout_width="160dp"
                   android:layout_height="160dp"
                   android:layout_centerInParent="true"
-                  android:src="@drawable/splash_icon"
-                  android:visibility="{splash_icon_visibility}" />
+                  android:src="{splash_src_drawable}"
+                  android:visibility="visible" />
           </RelativeLayout>
           """
           with open("app/src/main/res/layout/activity_splash.xml", "w") as f:
@@ -238,15 +238,21 @@ jobs:
                   android:progressDrawable="@android:drawable/progress_horizontal"
                   android:visibility="gone" />"""
 
+          layout_below_attr = 'android:layout_below="@id/progressBar"' if loading_ui_enabled else ""
+          
           swipe_refresh_layout_start = ""
           swipe_refresh_layout_end = ""
+          webview_layout_below = ""
+          
           if swipe_refresh_enabled:
-              swipe_refresh_layout_start = """<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+              swipe_refresh_layout_start = f"""<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
                   android:id="@+id/swipeRefreshLayout"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
-                  android:layout_below="@id/progressBar">"""
+                  {layout_below_attr}>"""
               swipe_refresh_layout_end = "</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>"
+          else:
+              webview_layout_below = layout_below_attr
 
           activity_main_xml = f"""<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -257,7 +263,8 @@ jobs:
               <WebView
                   android:id="@+id/webview"
                   android:layout_width="match_parent"
-                  android:layout_height="match_parent" />
+                  android:layout_height="match_parent"
+                  {webview_layout_below} />
               {swipe_refresh_layout_end}
           </RelativeLayout>
           """
@@ -402,7 +409,7 @@ jobs:
           if autoplay_enabled:
               autoplay_ua_block += "webSettings.setMediaPlaybackRequiresUserGesture(false);\n"
           if pc_mode_enabled:
-              autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
+              autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/114.0.0.0 Safari/537.36");
               webSettings.setUseWideViewPort(true);
               webSettings.setLoadWithOverviewMode(true);"""
 
