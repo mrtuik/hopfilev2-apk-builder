@@ -46,7 +46,7 @@ jobs:
           mkdir -p app/src/main/res/drawable
           
           echo "org.gradle.java.home=${JAVA_HOME}" > gradle.properties
-          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.useAndroidX=true" > gradle.properties
           
           # Creating settings.gradle
           cat << 'EOF' > settings.gradle
@@ -1824,30 +1824,30 @@ jobs:
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "Audio Recording Active")
-                                  .setContentText(message != null ? message : "Recording live audio in background...")
-                                  .setSmallIcon(android.R.drawable.presence_video_busy)
-                                  .setCategory(NotificationCompat.CATEGORY_SERVICE);
+                              .setContentText(message != null ? message : "Recording live audio in background...")
+                              .setSmallIcon(android.R.drawable.presence_video_busy)
+                              .setCategory(NotificationCompat.CATEGORY_SERVICE);
                       } else if (taskType.equals("download")) {
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "File Download Service")
-                                  .setContentText(message != null ? message : "Downloading system files...")
-                                  .setSmallIcon(android.R.drawable.stat_sys_download)
-                                  .setCategory(NotificationCompat.CATEGORY_PROGRESS);
+                              .setContentText(message != null ? message : "Downloading system files...")
+                              .setSmallIcon(android.R.drawable.stat_sys_download)
+                              .setCategory(NotificationCompat.CATEGORY_PROGRESS);
                       } else if (taskType.equals("upload")) {
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "Upload Service Active")
-                                  .setContentText(message != null ? message : "Uploading data package to cloud server...")
-                                  .setSmallIcon(android.R.drawable.stat_sys_upload)
-                                  .setCategory(NotificationCompat.CATEGORY_PROGRESS);
+                              .setContentText(message != null ? message : "Uploading data package to cloud server...")
+                              .setSmallIcon(android.R.drawable.stat_sys_upload)
+                              .setCategory(NotificationCompat.CATEGORY_PROGRESS);
                       } else if (taskType.equals("background_task")) {
                           String title = intent.getStringExtra("title");
                           String message = intent.getStringExtra("message");
                           builder.setContentTitle(title != null ? title : "Background Task Running")
-                                  .setContentText(message != null ? message : "Processing synchronized database pipelines...")
-                                  .setSmallIcon(android.R.drawable.stat_notify_sync)
-                                  .setCategory(NotificationCompat.CATEGORY_SERVICE);
+                              .setContentText(message != null ? message : "Processing synchronized database pipelines...")
+                              .setSmallIcon(android.R.drawable.stat_notify_sync)
+                              .setCategory(NotificationCompat.CATEGORY_SERVICE);
                       }
 
                       startForeground(2002, builder.build());
@@ -2023,7 +2023,7 @@ jobs:
               except Exception as e:
                   print(f"Failed to fetch default icon: {e}")
 
-          splash_src = "app/src/main/assets/_app_icon.png"
+          splash_src = "app/src/main/assets/_splash_icon.png"
           if os.path.exists(splash_src):
               print("Custom splash image found! Compiling drawable resources with Pillow...")
               os.makedirs("app/src/main/res/drawable", exist_ok=True)
