@@ -970,7 +970,6 @@ jobs:
 
                               if (!bigText.isEmpty()) {
                                   Notification.BigTextStyle bigStyle = new Notification.BigTextStyle();
-                                  bigStyle.bigText(bigStyle.toString());
                                   bigStyle.bigText(bigText);
                                   builder.setStyle(bigStyle);
                               }
