@@ -219,7 +219,7 @@ jobs:
           with open("app/src/main/res/values/styles.xml", "w") as f:
               f.write(styles_xml.strip())
 
-          # Write activity_splash.xml
+          # Write activity_splash.xml (Corrected XML declaration tag)
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
           activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
