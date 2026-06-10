@@ -262,77 +262,6 @@ jobs:
           with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
               f.write(custom_notification_xml.strip())
 
-          # Write activity_splash.xml
-          splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
-          activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="@color/splashBg">
-              <ImageView
-                  android:id="@+id/splash_logo"
-                  android:layout_width="160dp"
-                  android:layout_height="160dp"
-                  android:layout_centerInParent="true"
-                  android:src="__SPLASH_SRC_DRAWABLE__"
-                  android:visibility="visible" />
-          </RelativeLayout>
-          """
-          activity_splash_xml = activity_splash_xml_template.replace("__SPLASH_SRC_DRAWABLE__", splash_src_drawable)
-          with open("app/src/main/res/layout/activity_splash.xml", "w") as f:
-              f.write(activity_splash_xml.strip())
-
-          # Write activity_main.xml
-          loading_progress_bar = ""
-          if loading_ui_enabled:
-              loading_progress_bar = """<ProgressBar
-                  android:id="@+id/progressBar"
-                  style="?android:attr/progressBarStyleHorizontal"
-                  android:layout_width="match_parent"
-                  android:layout_height="6dp"
-                  android:layout_alignParentTop="true"
-                  android:progressDrawable="@android:drawable/progress_horizontal"
-                  android:visibility="gone" />"""
-
-          layout_below_attr = 'android:layout_below="@id/progressBar"' if loading_ui_enabled else ""
-          
-          swipe_refresh_layout_start = ""
-          swipe_refresh_layout_end = ""
-          webview_layout_below = ""
-          
-          if swipe_refresh_enabled:
-              swipe_refresh_layout_start = """<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                  android:id="@+id/swipeRefreshLayout"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  __LAYOUT_BELOW__>"""
-              swipe_refresh_layout_start = swipe_refresh_layout_start.replace("__LAYOUT_BELOW__", layout_below_attr)
-              swipe_refresh_layout_end = "</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>"
-          else:
-              webview_layout_below = layout_below_attr
-
-          activity_main_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
-              __LOADING_PROGRESS_BAR__
-              __SWIPE_REFRESH_LAYOUT_START__
-              <WebView
-                  android:id="@+id/webview"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  __WEBVIEW_LAYOUT_BELOW__ />
-              __SWIPE_REFRESH_LAYOUT_END__
-          </RelativeLayout>
-          """
-          activity_main_xml = activity_main_xml_template.replace("__LOADING_PROGRESS_BAR__", loading_progress_bar)
-          activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_START__", swipe_refresh_layout_start)
-          activity_main_xml = activity_main_xml.replace("__WEBVIEW_LAYOUT_BELOW__", webview_layout_below)
-          activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_END__", swipe_refresh_layout_end)
-          
-          with open("app/src/main/res/layout/activity_main.xml", "w") as f:
-              f.write(activity_main_xml.strip())
-
           # Handle Permissions
           camera_permission_manifest = '<uses-permission android:name="android.permission.CAMERA" />' if camera_enabled else ""
           audio_permission_manifest = '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' if microphone_enabled else ""
@@ -668,6 +597,27 @@ jobs:
                   createNotificationChannels();
                   mWebView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
                   mWebView.loadUrl("file:///android_asset/__HOMEPAGE__");
+                  
+                  handleNotificationAction(getIntent());
+              }
+
+              @Override
+              protected void onNewIntent(Intent intent) {
+                  super.onNewIntent(intent);
+                  setIntent(intent);
+                  handleNotificationAction(intent);
+              }
+
+              private void handleNotificationAction(Intent intent) {
+                  if (intent != null && intent.hasExtra("notification_action")) {
+                      final String actionCode = intent.getStringExtra("notification_action");
+                      mWebView.post(new Runnable() {
+                          @Override
+                          public void run() {
+                              mWebView.evaluateJavascript("javascript:if(window.onNotificationAction){window.onNotificationAction('" + actionCode + "');}", null);
+                          }
+                      });
+                  }
               }
 
               private void createNotificationChannels() {
@@ -817,8 +767,10 @@ jobs:
                           .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setAutoCancel(true);
 
-                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
-                  manager.notify(2010, builder.build());
+                  NotificationManagerCompat manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                  if (manager != null) {
+                      manager.notify(2010, builder.build());
+                  }
               }
 
               public void showFullScreenNotification(String title, String message) {
@@ -1270,6 +1222,148 @@ jobs:
                   public void startNativeDownload(String urlString, String fileName) {
                       mContext.startNativeDownload(urlString, fileName);
                   }
+
+                  @JavascriptInterface
+                  public void updatePlaybackNotification(String trackName, boolean isPlaying) {
+                      mContext.startMediaNotification(trackName, "Staged Sandbox Track", isPlaying);
+                  }
+
+                  @JavascriptInterface
+                  public void triggerDynamicNotification(String jsonConfig) {
+                      try {
+                          org.json.JSONObject config = new org.json.JSONObject(jsonConfig);
+                          int id = config.optInt("id", (int) System.currentTimeMillis());
+                          String title = config.optString("title", "Alert");
+                          String message = config.optString("message", "");
+
+                          if (config.has("delayMs")) {
+                              int delayMs = config.optInt("delayMs", 5000);
+                              scheduleNotification(title, message, delayMs / 1000);
+                              return;
+                          }
+
+                          if (config.optBoolean("foregroundService", false)) {
+                              startForegroundTask("background_task", title, message);
+                              return;
+                          }
+
+                          String channelId = config.optString("channelId", "default");
+                          if (config.optBoolean("silent", false)) {
+                              channelId = "silent_channel";
+                          } else if (config.optInt("importance", 3) >= 4 || config.optBoolean("fullScreen", false)) {
+                              channelId = "high_importance";
+                          } else if (config.has("progress") || config.optBoolean("indeterminate", false)) {
+                              channelId = "progress_channel";
+                          }
+
+                          NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, channelId)
+                                  .setSmallIcon(mContext.getApplicationInfo().icon)
+                                  .setContentTitle(title)
+                                  .setContentText(message)
+                                  .setAutoCancel(true)
+                                  .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+
+                          int importance = config.optInt("importance", 3);
+                          if (importance >= 4) {
+                              builder.setPriority(NotificationCompat.PRIORITY_HIGH)
+                                      .setDefaults(NotificationCompat.DEFAULT_ALL);
+                          } else if (importance <= 2 || channelId.equals("silent_channel")) {
+                              builder.setPriority(NotificationCompat.PRIORITY_MIN);
+                          } else {
+                              builder.setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                          }
+
+                          if (config.optBoolean("ongoing", false)) {
+                              builder.setOngoing(true);
+                          }
+
+                          if (config.has("badgeCount")) {
+                              builder.setNumber(config.optInt("badgeCount", 0));
+                          }
+
+                          if (config.has("category")) {
+                              builder.setCategory(config.optString("category"));
+                          }
+
+                          if (config.has("bigText")) {
+                              builder.setStyle(new NotificationCompat.BigTextStyle()
+                                      .bigText(config.optString("bigText"))
+                                      .setSummaryText(config.optString("summary", "Details")));
+                          }
+
+                          if (config.has("bigPictureBase64")) {
+                              try {
+                                  byte[] decoded = Base64.decode(config.optString("bigPictureBase64"), Base64.DEFAULT);
+                                  android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                                  builder.setStyle(new NotificationCompat.BigPictureStyle().bigPicture(bitmap));
+                              } catch (Exception e) {}
+                          }
+
+                          if (config.has("inboxLines")) {
+                              org.json.JSONArray lines = config.optJSONArray("inboxLines");
+                              if (lines != null) {
+                                  NotificationCompat.InboxStyle inbox = new NotificationCompat.InboxStyle();
+                                  for (int i = 0; i < lines.length(); i++) {
+                                      inbox.addLine(lines.optString(i));
+                                  }
+                                  builder.setStyle(inbox);
+                              }
+                          }
+
+                          if (config.has("progress") || config.optBoolean("indeterminate", false)) {
+                              int max = config.optInt("maxProgress", 100);
+                              int current = config.optInt("progress", 0);
+                              boolean ind = config.optBoolean("indeterminate", false);
+                              builder.setProgress(max, current, ind);
+                          }
+
+                          if (config.has("actions")) {
+                              org.json.JSONArray actions = config.optJSONArray("actions");
+                              if (actions != null) {
+                                  for (int i = 0; i < actions.length(); i++) {
+                                      org.json.JSONObject action = actions.optJSONObject(i);
+                                      if (action != null) {
+                                          String actTitle = action.optString("title");
+                                          String actCode = action.optString("actionCode");
+
+                                          Intent actionIntent = new Intent(mContext, MainActivity.class);
+                                          actionIntent.putExtra("notification_action", actCode);
+                                          actionIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                          android.app.PendingIntent pIntent = android.app.PendingIntent.getActivity(mContext, (int)System.currentTimeMillis() + i, actionIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                                          builder.addAction(android.R.drawable.ic_menu_info_details, actTitle, pIntent);
+                                      }
+                                  }
+                              }
+                          }
+
+                          if ("custom".equals(config.optString("type"))) {
+                              android.widget.RemoteViews remoteViews = new android.widget.RemoteViews(mContext.getPackageName(), R.layout.custom_notification);
+                              remoteViews.setImageViewResource(R.id.custom_icon, mContext.getApplicationInfo().icon);
+                              remoteViews.setTextViewText(R.id.custom_title, title);
+                              remoteViews.setTextViewText(R.id.custom_text, message);
+                              builder.setCustomContentView(remoteViews);
+                          }
+
+                          if (config.optBoolean("fullScreen", false)) {
+                              Intent fullScreenIntent = new Intent(mContext, MainActivity.class);
+                              android.app.PendingIntent pIntent = android.app.PendingIntent.getActivity(mContext, 0, fullScreenIntent, android.app.PendingIntent.FLAG_IMMUTABLE);
+                              builder.setFullScreenIntent(pIntent, true)
+                                      .setCategory(NotificationCompat.CATEGORY_CALL);
+                          }
+
+                          Intent mainIntent = new Intent(mContext, MainActivity.class);
+                          mainIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                          android.app.PendingIntent pMain = android.app.PendingIntent.getActivity(mContext, id, mainIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+                          builder.setContentIntent(pMain);
+
+                          NotificationManagerCompat manager = NotificationManagerCompat.from(mContext);
+                          manager.notify(id, builder.build());
+
+                      } catch (Exception e) {
+                          e.printStackTrace();
+                      }
+                  }
               }
 
               public static class NotificationReceiver extends android.content.BroadcastReceiver {
@@ -1404,148 +1498,3 @@ jobs:
               }
           }
           """
-          
-          main_activity_java = main_activity_java_template.replace("__SWIPE_IMPORT__", swipe_import_block)
-          main_activity_java = main_activity_java.replace("__SWIPE_DECLARATION__", swipe_declaration_block)
-          main_activity_java = main_activity_java.replace("__PROGRESS_DECLARATION__", progress_declaration_block)
-          main_activity_java = main_activity_java.replace("__PROGRESS_INIT__", progress_init_block)
-          main_activity_java = main_activity_java.replace("__LOCAL_STORAGE__", local_storage_block)
-          main_activity_java = main_activity_java.replace("__ZOOM__", zoom_block)
-          main_activity_java = main_activity_java.replace("__AUTOPLAY_UA__", autoplay_ua_block)
-          main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_CODE__", swipe_refresh_code_block)
-          main_activity_java = main_activity_java.replace("__LONG_PRESS__", long_press_code_block)
-          main_activity_java = main_activity_java.replace("__DOWNLOAD_MANAGER__", download_manager_block)
-          main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_STOP_CODE__", swipe_refresh_stop_code_block)
-          main_activity_java = main_activity_java.replace("__PROGRESS_UPDATE__", progress_update_block)
-          main_activity_java = main_activity_java.replace("__PERMISSION_MANAGER__", permission_manager_block)
-          main_activity_java = main_activity_java.replace("__HOMEPAGE__", homepage)
-
-          with open("app/src/main/java/com/example/runner/MainActivity.java", "w") as f:
-              f.write(main_activity_java.strip())
-
-          # Process Custom Launcher and Splash Icons with Pillow natively
-          icon_src = "app/src/main/assets/_app_icon.png"
-          if os.path.exists(icon_src):
-              print("Custom Launcher icon found! Compiling res mipmaps with Pillow...")
-              sizes = {
-                  "mipmap-mdpi": 48,
-                  "mipmap-hdpi": 72,
-                  "mipmap-xhdpi": 96,
-                  "mipmap-xxhdpi": 144,
-                  "mipmap-xxxhdpi": 192
-              }
-              try:
-                  with Image.open(icon_src) as img:
-                      for folder, size in sizes.items():
-                          dest_dir = f"app/src/main/res/{folder}"
-                          os.makedirs(dest_dir, exist_ok=True)
-                          resized_img = img.resize((size, size), Image.Resampling.LANCZOS)
-                          resized_img.save(f"{dest_dir}/ic_launcher.png")
-              except Exception as e:
-                  print(f"Error resizing custom launcher icon: {e}")
-          else:
-              print("Using default fallback launcher icon...")
-              dest_dir = "app/src/main/res/mipmap-xxhdpi"
-              os.makedirs(dest_dir, exist_ok=True)
-              try:
-                  url = "https://raw.githubusercontent.com/android/platform_development/master/apps/Development/res/mipmap-xxhdpi/ic_launcher_android.png"
-                  urllib.request.urlretrieve(url, f"{dest_dir}/ic_launcher.png")
-              except Exception as e:
-                  print(f"Failed to fetch default icon: {e}")
-
-          splash_src = "app/src/main/assets/_splash_icon.png"
-          if os.path.exists(splash_src):
-              print("Custom splash image found! Compiling drawable resources with Pillow...")
-              os.makedirs("app/src/main/res/drawable", exist_ok=True)
-              try:
-                  with Image.open(splash_src) as img:
-                      resized_img = img.resize((512, 512), Image.Resampling.LANCZOS)
-                      resized_img.save("app/src/main/res/drawable/splash_icon.png")
-              except Exception as e:
-                  print(f"Error resizing custom splash icon: {e}")
-          EOF
-          python3 build_assets.py
-
-      - name: Write strings.xml resource values
-        run: |
-          cat << EOF > app/src/main/res/values/strings.xml
-          <resources>
-              <string name="app_name">${APP_NAME}</string>
-          </resources>
-          EOF
-
-      - name: Setup Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version 8.0.2
-
-      - name: Developer Mode Compilation Log Summary
-        run: |
-          echo "### Generated Android Manifest Settings" >> $GITHUB_STEP_SUMMARY
-          echo '```xml' >> $GITHUB_STEP_SUMMARY
-          cat app/src/main/AndroidManifest.xml >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo "### Compiled MainActivity.java Source" >> $GITHUB_STEP_SUMMARY
-          echo '```java' >> $GITHUB_STEP_SUMMARY
-          cat app/src/main/java/com/example/runner/MainActivity.java >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-
-      - name: Run APK Compile Gradle Task
-        run: |
-          ./gradlew :app:assembleDebug
-
-      - name: Package APK into ZIP and Rename
-        run: |
-          CLEANED_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]_')
-          APK_NAME="${CLEANED_NAME}_v${VERSION_NAME}.apk"
-          ZIP_NAME="${CLEANED_NAME}_v${VERSION_NAME}_APK.zip"
-          
-          # Create a custom credits.txt file
-          cat << 'EOF' > app/build/outputs/apk/debug/credits.txt
-          ==================================================
-          HopFile Editor - Release Staging Package
-          ==================================================
-          This package was generated dynamically by HopFile Editor Workspace.
-
-          Credits:
-          HopFile Editor is designed, developed, and maintained by tuik.
-          All rights reserved.
-
-          Thank you for choosing HopFile Editor as your Mobile IDE & Compiler!
-          ==================================================
-          EOF
-          
-          cd app/build/outputs/apk/debug/
-          mv app-debug.apk $APK_NAME
-          zip -r $ZIP_NAME $APK_NAME credits.txt
-
-      - name: Generate Unique Release Tag
-        id: tag_gen
-        run: |
-          CLEANED_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]_')
-          TAG="release-${CLEANED_NAME}-${{ github.run_number }}"
-          echo "TAG_NAME=$TAG" >> $GITHUB_OUTPUT
-
-      - name: Create GitHub Release and Upload APK
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ steps.tag_gen.outputs.TAG_NAME }}
-          name: "Release: ${{ env.APP_NAME }} (v${{ env.VERSION_NAME }})"
-          body: |
-            Automated Android package build for **${{ env.APP_NAME }}**
-            - **Package ID:** `${{ env.PACKAGE_ID }}`
-            - **Build ID:** `${{ github.run_number }}`
-          files: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/debug/*.zip
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Clean up temporary payload zip from git
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git rm -f "${ZIP_NAME}" || true
-          git commit -m "chore: clean up temporary build payload [skip ci]" || true
-          git push origin main || git push origin master || true
