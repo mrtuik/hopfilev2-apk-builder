@@ -97,8 +97,8 @@ jobs:
 
       - name: Generate Native Android Code from app_config.json
         run: |
-          # Safe python pip installation of Pillow
-          python3 -m pip install pillow
+          # Safe Debian installation of Pillow (bypasses PEP 668 block)
+          sudo apt-get update && sudo apt-get install -y python3-pil
           
           cat << 'EOF' > build_assets.py
           import json
@@ -319,14 +319,14 @@ jobs:
                       android:layout_width="32dp"
                       android:layout_height="32dp"
                       android:src="@android:drawable/ic_media_previous"
-                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:background="@android:color/transparent"
                       android:contentDescription="Previous"/>
                   <ImageButton
                       android:id="@+id/btn_play_pause"
                       android:layout_width="36dp"
                       android:layout_height="36dp"
                       android:src="@android:drawable/ic_media_pause"
-                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:background="@android:color/transparent"
                       android:contentDescription="Play/Pause"
                       android:layout_marginLeft="6dp"
                       android:layout_marginRight="6dp"/>
@@ -335,7 +335,7 @@ jobs:
                       android:layout_width="32dp"
                       android:layout_height="32dp"
                       android:src="@android:drawable/ic_media_next"
-                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:background="@android:color/transparent"
                       android:contentDescription="Next"/>
               </LinearLayout>
           </RelativeLayout>
@@ -392,7 +392,7 @@ jobs:
                   android:layout_width="28dp"
                   android:layout_height="28dp"
                   android:src="@android:drawable/ic_menu_close_clear_cancel"
-                  android:background="?android:attr/selectableItemBackgroundBorderless"
+                  android:background="@android:color/transparent"
                   android:layout_alignParentRight="true"
                   android:layout_alignParentTop="true"/>
               <LinearLayout
@@ -441,14 +441,14 @@ jobs:
                       android:layout_width="36dp"
                       android:layout_height="36dp"
                       android:src="@android:drawable/ic_media_previous"
-                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:background="@android:color/transparent"
                       android:contentDescription="Previous"/>
                   <ImageButton
                       android:id="@+id/btn_play_pause_large"
                       android:layout_width="44dp"
                       android:layout_height="44dp"
                       android:src="@android:drawable/ic_media_pause"
-                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:background="@android:color/transparent"
                       android:contentDescription="Play/Pause"
                       android:layout_marginLeft="14dp"
                       android:layout_marginRight="14dp"/>
@@ -457,7 +457,7 @@ jobs:
                       android:layout_width="36dp"
                       android:layout_height="36dp"
                       android:src="@android:drawable/ic_media_next"
-                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:background="@android:color/transparent"
                       android:contentDescription="Next"/>
               </LinearLayout>
           </RelativeLayout>
@@ -790,6 +790,7 @@ jobs:
           import android.util.Base64;
           import android.webkit.JavascriptInterface;
           import com.example.runner.R;
+          import android.support.v4.media.session.MediaSessionCompat;
           import java.util.ArrayList;
           __SWIPE_IMPORT__
 
@@ -2022,7 +2023,7 @@ jobs:
               except Exception as e:
                   print(f"Failed to fetch default icon: {e}")
 
-          splash_src = "app/src/main/assets/_splash_icon.png"
+          splash_src = "app/src/main/assets/_app_icon.png"
           if os.path.exists(splash_src):
               print("Custom splash image found! Compiling drawable resources with Pillow...")
               os.makedirs("app/src/main/res/drawable", exist_ok=True)
