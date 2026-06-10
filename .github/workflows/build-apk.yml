@@ -272,14 +272,14 @@ jobs:
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
-                  __LOADING_PROGRESS_BAR__
-                  __SWIPE_REFRESH_LAYOUT_START__
-                  <WebView
-                      android:id="@+id/webview"
-                      android:layout_width="match_parent"
-                      android:layout_height="match_parent"
-                      __WEBVIEW_LAYOUT_BELOW__ />
-                  __SWIPE_REFRESH_LAYOUT_END__
+              __LOADING_PROGRESS_BAR__
+              __SWIPE_REFRESH_LAYOUT_START__
+              <WebView
+                  android:id="@+id/webview"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  __WEBVIEW_LAYOUT_BELOW__ />
+              __SWIPE_REFRESH_LAYOUT_END__
           </RelativeLayout>
           """
           activity_main_xml = activity_main_xml_template.replace("__LOADING_PROGRESS_BAR__", loading_progress_bar)
@@ -290,51 +290,10 @@ jobs:
           with open("app/src/main/res/layout/activity_main.xml", "w") as f:
               f.write(activity_main_xml.strip())
 
-          # Custom RemoteView layout for custom notifications
-          os.makedirs("app/src/main/res/layout", exist_ok=True)
-          custom_notification_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="64dp"
-              android:padding="8dp"
-              android:background="#131A2E">
-              <ImageView
-                  android:id="@+id/custom_notif_icon"
-                  android:layout_width="48dp"
-                  android:layout_height="48dp"
-                  android:src="@mipmap/ic_launcher"
-                  android:layout_alignParentLeft="true"
-                  android:layout_centerVertical="true" />
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="vertical"
-                  android:layout_toRightOf="@id/custom_notif_icon"
-                  android:layout_marginLeft="12dp"
-                  android:layout_centerVertical="true">
-                  <TextView
-                      android:id="@+id/custom_notif_title"
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:textColor="#FFFFFF"
-                      android:textSize="14sp"
-                      android:textStyle="bold" />
-                  <TextView
-                      android:id="@+id/custom_notif_message"
-                      android:layout_width="match_parent"
-                      android:layout_height="wrap_content"
-                      android:textColor="#94A3B8"
-                      android:textSize="11sp" />
-              </LinearLayout>
-          </RelativeLayout>
-          """
-          with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
-              f.write(custom_notification_xml.strip())
-
           # Handle Permissions
           camera_permission_manifest = '<uses-permission android:name="android.permission.CAMERA" />' if camera_enabled else ""
           audio_permission_manifest = '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' if microphone_enabled else ""
-          notification_permission_manifest = '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />' if notifications_enabled else ""
+          notification_permission_manifest = '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' if notifications_enabled else ""
           
           storage_permission_manifest = ""
           if local_storage_enabled:
@@ -350,7 +309,7 @@ jobs:
           elif screen_rotation == "landscape":
               orientation_mode = "landscape"
 
-          # Write AndroidManifest.xml (Including services and receivers)
+          # Write AndroidManifest.xml
           android_manifest_xml_template = """<?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
@@ -386,10 +345,6 @@ jobs:
                       android:configChanges="orientation|screenSize|keyboardHidden"
                       android:screenOrientation="__ORIENTATION_MODE__">
                   </activity>
-
-                  <receiver android:name="com.example.runner.NotificationReceiver" android:exported="true" />
-                  <receiver android:name="com.example.runner.ActionReceiver" android:exported="true" />
-                  <service android:name="com.example.runner.WebRunnerService" android:exported="false" />
               </application>
           </manifest>
           """
@@ -429,109 +384,6 @@ jobs:
           splash_activity_java = splash_activity_java_template.replace("__SPLASH_DURATION__", str(splash_duration))
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
-
-          # Write WebRunnerService.java (For Background execution)
-          webrunner_service_template = """package com.example.runner;
-          import android.app.Service;
-          import android.content.Intent;
-          import android.os.IBinder;
-          import android.app.Notification;
-          import android.os.Build;
-          import com.example.runner.R;
-
-          public class WebRunnerService extends Service {
-              @Override
-              public int onStartCommand(Intent intent, int flags, int startId) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "default");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-                  builder.setSmallIcon(R.mipmap.ic_launcher)
-                          .setContentTitle("HopFile Background Services")
-                          .setContentText("Persistent execution environment active.")
-                          .setOngoing(true);
-                  
-                  startForeground(1001, builder.build());
-                  return START_STICKY;
-              }
-
-              @Override
-              public IBinder onBind(Intent intent) {
-                  return null;
-              }
-          }
-          """
-          with open("app/src/main/java/com/example/runner/WebRunnerService.java", "w") as f:
-              f.write(webrunner_service_template.strip())
-
-          # Write NotificationReceiver.java (For scheduled alarms)
-          notif_receiver_template = """package com.example.runner;
-          import android.content.BroadcastReceiver;
-          import android.content.Context;
-          import android.content.Intent;
-          import android.app.NotificationManager;
-          import android.app.Notification;
-          import android.os.Build;
-          import com.example.runner.R;
-
-          public class NotificationReceiver extends BroadcastReceiver {
-              @Override
-              public void onReceive(Context context, Intent intent) {
-                  String title = intent.getStringExtra("title");
-                  String message = intent.getStringExtra("message");
-                  int id = intent.getIntExtra("id", 123);
-
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(context, "default");
-                  } else {
-                      builder = new Notification.Builder(context);
-                  }
-
-                  builder.setSmallIcon(R.mipmap.ic_launcher)
-                          .setContentTitle(title)
-                          .setContentText(message)
-                          .setAutoCancel(true);
-
-                  NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(id, builder.build());
-                  }
-              }
-          }
-          """
-          with open("app/src/main/java/com/example/runner/NotificationReceiver.java", "w") as f:
-              f.write(notif_receiver_template.strip())
-
-          # Write ActionReceiver.java (For notification interactive buttons)
-          action_receiver_template = """package com.example.runner;
-          import android.content.BroadcastReceiver;
-          import android.content.Context;
-          import android.content.Intent;
-          import android.app.NotificationManager;
-
-          public class ActionReceiver extends BroadcastReceiver {
-              @Override
-              public void onReceive(Context context, Intent intent) {
-                  String actionCode = intent.getStringExtra("actionCode");
-                  int notificationId = intent.getIntExtra("id", 0);
-                  
-                  NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                  if (manager != null && notificationId != 0) {
-                      manager.cancel(notificationId);
-                  }
-
-                  Intent launchIntent = new Intent(context, MainActivity.class);
-                  launchIntent.putExtra("actionCode", actionCode);
-                  launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                  context.startActivity(launchIntent);
-              }
-          }
-          """
-          with open("app/src/main/java/com/example/runner/ActionReceiver.java", "w") as f:
-              f.write(action_receiver_template.strip())
 
           # Generate MainActivity.java
           swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
@@ -657,7 +509,6 @@ jobs:
           import android.app.Notification;
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
-          import android.content.Context;
           import android.content.pm.PackageManager;
           import android.content.ClipData;
           import android.content.Intent;
@@ -680,16 +531,12 @@ jobs:
           import android.webkit.WebViewClient;
           import android.widget.ProgressBar;
           import android.widget.Toast;
-          import android.widget.RemoteViews;
           import androidx.core.content.ContextCompat;
           import android.content.ContentValues;
           import android.provider.MediaStore;
           import java.io.OutputStream;
           import android.util.Base64;
           import android.webkit.JavascriptInterface;
-          import org.json.JSONObject;
-          import org.json.JSONArray;
-          import com.example.runner.R;
           import java.util.ArrayList;
           __SWIPE_IMPORT__
 
@@ -770,27 +617,6 @@ jobs:
                   __PERMISSION_MANAGER__
                   mWebView.addJavascriptInterface(this, "AndroidApp");
                   mWebView.loadUrl("file:///android_asset/__HOMEPAGE__");
-                  
-                  processIntentExtras(getIntent());
-              }
-
-              @Override
-              protected void onNewIntent(Intent intent) {
-                  super.onNewIntent(intent);
-                  setIntent(intent);
-                  processIntentExtras(intent);
-              }
-
-              private void processIntentExtras(Intent intent) {
-                  if (intent != null && intent.hasExtra("actionCode")) {
-                      final String actionCode = intent.getStringExtra("actionCode");
-                      runOnUiThread(new Runnable() {
-                          @Override
-                          public void run() {
-                              mWebView.evaluateJavascript("javascript:if(window.onNotificationAction){window.onNotificationAction('" + actionCode + "');}", null);
-                          }
-                      });
-                  }
               }
 
               @JavascriptInterface
@@ -813,243 +639,9 @@ jobs:
               }
 
               @JavascriptInterface
-              public void updatePlaybackNotification(final String trackName, final boolean isPlaying) {
-                  runOnUiThread(new Runnable() {
-                      @Override
-                      public void run() {
-                          NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                          if (manager == null) return;
-
-                          if (trackName == null || trackName.isEmpty()) {
-                              manager.cancel(999);
-                              return;
-                          }
-
-                          Notification.Builder builder;
-                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                              builder = new Notification.Builder(MainActivity.this, "default");
-                          } else {
-                              builder = new Notification.Builder(MainActivity.this);
-                          }
-
-                          builder.setSmallIcon(R.mipmap.ic_launcher)
-                                  .setContentTitle(isPlaying ? "Now Playing" : "Playback Paused")
-                                  .setContentText(trackName)
-                                  .setOngoing(isPlaying)
-                                  .setOnlyAlertOnce(true);
-
-                          manager.notify(999, builder.build());
-                      }
-                  });
-              }
-
-              @JavascriptInterface
-              public void triggerDynamicNotification(String jsonConfig) {
-                  try {
-                      JSONObject config = new JSONObject(jsonConfig);
-                      final int id = config.optInt("id", (int) System.currentTimeMillis());
-                      final String title = config.optString("title", "HopFile Notification");
-                      final String message = config.optString("message", "");
-                      final String type = config.optString("type", "basic");
-                      final String channelId = config.optString("channelId", "default");
-                      final String channelName = config.optString("channelName", "Standard Alerts");
-                      final int importance = config.optInt("importance", 3);
-                      final boolean ongoing = config.optBoolean("ongoing", false);
-                      final boolean silent = config.optBoolean("silent", false);
-                      final int progress = config.optInt("progress", -1);
-                      final int maxProgress = config.optInt("maxProgress", 100);
-                      final boolean indeterminate = config.optBoolean("indeterminate", false);
-                      final String bigText = config.optString("bigText", "");
-                      final String bigPictureBase64 = config.optString("bigPictureBase64", "");
-                      final int badgeCount = config.optInt("badgeCount", 0);
-                      final int visibility = config.optInt("visibility", 1);
-                      final String category = config.optString("category", "");
-                      final long delayMs = config.optLong("delayMs", 0);
-                      final boolean fullScreen = config.optBoolean("fullScreen", false);
-                      final boolean foregroundService = config.optBoolean("foregroundService", false);
-
-                      if (foregroundService) {
-                          runOnUiThread(new Runnable() {
-                              @Override
-                              public void run() {
-                                  Intent serviceIntent = new Intent(MainActivity.this, WebRunnerService.class);
-                                  startService(serviceIntent);
-                              }
-                          });
-                          return;
-                      }
-
-                      if (delayMs > 0) {
-                          Intent alarmIntent = new Intent(this, NotificationReceiver.class);
-                          alarmIntent.putExtra("title", title);
-                          alarmIntent.putExtra("message", message);
-                          alarmIntent.putExtra("id", id);
-                          PendingIntent pendingAlarm = PendingIntent.getBroadcast(
-                                  this, id, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
-                          );
-                          android.app.AlarmManager alarmManager = (android.app.AlarmManager) getSystemService(Context.ALARM_SERVICE);
-                          if (alarmManager != null) {
-                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                  alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delayMs, pendingAlarm);
-                              } else {
-                                  alarmManager.set(android.app.AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + delayMs, pendingAlarm);
-                              }
-                          }
-                          return;
-                      }
-
-                      runOnUiThread(new Runnable() {
-                          @Override
-                          public void run() {
-                              NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                              if (manager == null) return;
-
-                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                  NotificationChannel channel = new NotificationChannel(channelId, channelName, importance);
-                                  if (silent) {
-                                      channel.setSound(null, null);
-                                      channel.enableVibration(false);
-                                  }
-                                  manager.createNotificationChannel(channel);
-                              }
-
-                              Notification.Builder builder;
-                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                  builder = new Notification.Builder(MainActivity.this, channelId);
-                              } else {
-                                  builder = new Notification.Builder(MainActivity.this);
-                              }
-
-                              builder.setSmallIcon(R.mipmap.ic_launcher)
-                                      .setContentTitle(title)
-                                      .setContentText(message)
-                                      .setOngoing(ongoing)
-                                      .setOnlyAlertOnce(true)
-                                      .setAutoCancel(true);
-
-                              if (badgeCount > 0) {
-                                  builder.setNumber(badgeCount);
-                              }
-
-                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                  builder.setVisibility(visibility);
-                                  if (!category.isEmpty()) {
-                                      builder.setCategory(category);
-                                  }
-                              }
-
-                              if (importance >= 4) {
-                                  builder.setPriority(Notification.PRIORITY_HIGH);
-                                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                      builder.setDefaults(Notification.DEFAULT_ALL);
-                                  }
-                              } else if (silent) {
-                                  builder.setPriority(Notification.PRIORITY_MIN);
-                              }
-
-                              Intent clickIntent = new Intent(MainActivity.this, MainActivity.class);
-                              clickIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                              PendingIntent pendingClick = PendingIntent.getActivity(
-                                      MainActivity.this, id, clickIntent, PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
-                              );
-                              builder.setContentIntent(pendingClick);
-
-                              if (fullScreen) {
-                                  Intent fsIntent = new Intent(MainActivity.this, MainActivity.class);
-                                  PendingIntent pendingFS = PendingIntent.getActivity(
-                                          MainActivity.this, id, fsIntent, PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0)
-                                  );
-                                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                                      builder.setFullScreenIntent(pendingFS, true);
-                                  }
-                              }
-
-                              if (progress >= 0 || indeterminate) {
-                                  builder.setProgress(maxProgress, progress, indeterminate);
-                              }
-
-                              if (!bigText.isEmpty()) {
-                                  Notification.BigTextStyle bigStyle = new Notification.BigTextStyle();
-                                  bigStyle.bigText(bigText);
-                                  builder.setStyle(bigStyle);
-                              }
-
-                              if (!bigPictureBase64.isEmpty()) {
-                                  try {
-                                      byte[] decodedString = Base64.decode(bigPictureBase64, Base64.DEFAULT);
-                                      android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                                      Notification.BigPictureStyle picStyle = new Notification.BigPictureStyle();
-                                      picStyle.bigPicture(bitmap);
-                                      builder.setStyle(picStyle);
-                                  } catch (Exception ex) { ex.printStackTrace(); }
-                              }
-
-                              JSONArray inboxLines = config.optJSONArray("inboxLines");
-                              if (inboxLines != null && inboxLines.length() > 0) {
-                                  Notification.InboxStyle inboxStyle = new Notification.InboxStyle();
-                                  for (int i = 0; i < inboxLines.length(); i++) {
-                                      inboxStyle.addLine(inboxLines.optString(i));
-                                  }
-                                  builder.setStyle(inboxStyle);
-                              }
-
-                              JSONArray actions = config.optJSONArray("actions");
-                              if (actions != null && actions.length() > 0) {
-                                  for (int i = 0; i < actions.length(); i++) {
-                                      JSONObject actObj = actions.optJSONObject(i);
-                                      if (actObj != null) {
-                                          String actTitle = actObj.optString("title", "Action");
-                                          String actCode = actObj.optString("actionCode", "");
-                                          Intent actIntent = new Intent(MainActivity.this, ActionReceiver.class);
-                                          actIntent.putExtra("actionCode", actCode);
-                                          actIntent.putExtra("id", id);
-                                          PendingIntent pendingAct = PendingIntent.getBroadcast(
-                                                  MainActivity.this, id + i + 1000, actIntent, PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_MUTABLE : 0)
-                                          );
-                                          builder.addAction(R.mipmap.ic_launcher, actTitle, pendingAct);
-                                      }
-                                  }
-                              }
-
-                              if ("custom".equals(type)) {
-                                  RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.custom_notification);
-                                  remoteViews.setTextViewText(R.id.custom_notif_title, title);
-                                  remoteViews.setTextViewText(R.id.custom_notif_message, message);
-                                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                      builder.setCustomContentView(remoteViews);
-                                  } else {
-                                      builder.setContent(remoteViews);
-                                  }
-                              }
-
-                              manager.notify(id, builder.build());
-                          }
-                      });
-                  } catch (Exception e) {
-                      e.printStackTrace();
-                  }
-              }
-
-              @JavascriptInterface
-              public void cancelNotification(final int id) {
-                  runOnUiThread(new Runnable() {
-                      @Override
-                      public void run() {
-                          NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                          if (manager != null) {
-                              manager.cancel(id);
-                          }
-                      }
-                  });
-              }
-
-              @JavascriptInterface
-              public void saveBase64File(String base64Data, String mimeType, String fileName) {
+              public void saveBase64File(final String base64Data, final String mimeType, final String fileName) {
                   try {
                       final byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
-                      final String fName = fileName;
-                      final String fMime = mimeType;
-                      
                       runOnUiThread(new Runnable() {
                           @Override
                           public void run() {
@@ -1057,8 +649,8 @@ jobs:
                                   OutputStream os;
                                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                                       ContentValues values = new ContentValues();
-                                      values.put(MediaStore.MediaColumns.DISPLAY_NAME, fName);
-                                      values.put(MediaStore.MediaColumns.MIME_TYPE, fMime);
+                                      values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                                      values.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
                                       values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
                                       Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
                                       if (uri == null) {
@@ -1070,17 +662,17 @@ jobs:
                                           os.write(fileBytes);
                                           os.close();
                                           Toast.makeText(MainActivity.this, "File saved to Downloads folder!", Toast.LENGTH_LONG).show();
-                                          showNotification("Download Completed", fName + " saved to Downloads.");
+                                          showNotification("Download Completed", fileName + " saved to Downloads.");
                                       }
                                   } else {
                                       java.io.File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                                      java.io.File file = new java.io.File(downloadDir, fName);
+                                      java.io.File file = new java.io.File(downloadDir, fileName);
                                       os = new java.io.FileOutputStream(file);
                                       if (os != null) {
                                           os.write(fileBytes);
                                           os.close();
                                           Toast.makeText(MainActivity.this, "File saved to Downloads folder!", Toast.LENGTH_LONG).show();
-                                          showNotification("Download Completed", fName + " saved to Downloads.");
+                                          showNotification("Download Completed", fileName + " saved to Downloads.");
                                       }
                                   }
                               } catch (Exception ex) {
@@ -1224,8 +816,8 @@ jobs:
                   with Image.open(splash_src) as img:
                       resized_img = img.resize((512, 512), Image.Resampling.LANCZOS)
                       resized_img.save("app/src/main/res/drawable/splash_icon.png")
-                  except Exception as e:
-                      print(f"Error resizing custom splash icon: {e}")
+              except Exception as e:
+                  print(f"Error resizing custom splash icon: {e}")
           EOF
           python3 build_assets.py
 
