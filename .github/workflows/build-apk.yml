@@ -185,22 +185,28 @@ jobs:
           with open("app/src/main/res/values/colors.xml", "w") as f:
               f.write(colors_xml.strip())
 
-          # Write styles.xml
+          # Write styles.xml (Fullscreen & No Title configs handled cleanly via themes)
+          theme_style_parent = "Theme.AppCompat.Light.NoActionBar"
+          theme_items = ""
+          if fullscreen_enabled:
+              theme_items = """<item name="android:windowFullscreen">true</item>
+              <item name="android:windowNoTitle">true</item>"""
+          elif hide_title_bar:
+              theme_items = """<item name="android:windowNoTitle">true</item>"""
+          else:
+              theme_style_parent = "Theme.AppCompat.Light.DarkActionBar"
+
           styles_xml = f"""<?xml version="1.0" encoding="utf-8"?>
           <resources>
               <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
                   <item name="android:windowBackground">@color/splashBg</item>
                   <item name="android:windowFullscreen">true</item>
               </style>
-              <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+              <style name="AppTheme" parent="{theme_style_parent}">
                   <item name="colorPrimary">@color/colorPrimary</item>
                   <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
                   <item name="colorAccent">@color/colorAccent</item>
-              </style>
-              <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.Light.NoActionBar">
-                  <item name="colorPrimary">@color/colorPrimary</item>
-                  <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-                  <item name="colorAccent">@color/colorAccent</item>
+                  {theme_items}
               </style>
           </resources>
           """
@@ -271,12 +277,10 @@ jobs:
           with open("app/src/main/res/layout/activity_main.xml", "w") as f:
               f.write(activity_main_xml.strip())
 
-          # Handle Permissions & App Theme selection based on Hide Actionbar configuration
+          # Handle Permissions
           camera_permission_manifest = '<uses-permission android:name="android.permission.CAMERA" />' if camera_enabled else ""
           audio_permission_manifest = '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' if microphone_enabled else ""
           notification_permission_manifest = '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' if notifications_enabled else ""
-          
-          theme_name = "AppTheme.NoActionBar" if hide_title_bar or fullscreen_enabled else "AppTheme"
           
           # Rotation preference mapping
           orientation_mode = "unspecified"
@@ -301,7 +305,7 @@ jobs:
                   android:roundIcon="@mipmap/ic_launcher"
                   android:supportsRtl="true"
                   android:usesCleartextTraffic="true"
-                  android:theme="@style/{theme_name}">
+                  android:theme="@style/AppTheme">
                   
                   <activity
                       android:name="com.example.runner.SplashActivity"
@@ -353,7 +357,7 @@ jobs:
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
 
-          # Generate MainActivity.java with native web implementations (Upgraded to AppCompatActivity)
+          # Generate MainActivity.java with native web implementations (Safe Exception handlers on Permissions)
           swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
           swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
           progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
@@ -368,33 +372,11 @@ jobs:
               }
           }""" if loading_ui_enabled else ""
 
-          fullscreen_block = ""
-          if fullscreen_enabled:
-              fullscreen_block = """
-              getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                  getWindow().setDecorFitsSystemWindows(false);
-                  WindowInsetsController controller = getWindow().getInsetsController();
-                  if (controller != null) {
-                      controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-                      controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-                  }
-              } else {
-                  getWindow().getDecorView().setSystemUiVisibility(
-                      View.SYSTEM_UI_FLAG_FULLSCREEN
-                      | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                      | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                  );
-              }"""
-
           local_storage_block = ""
           if local_storage_enabled:
               local_storage_block = """webSettings.setDomStorageEnabled(true);
-              webSettings.setDatabaseEnabled(true);
               webSettings.setAllowFileAccess(true);
-              webSettings.setAllowContentAccess(true);
-              webSettings.setAllowFileAccessFromFileURLs(true);
-              webSettings.setAllowUniversalAccessFromFileURLs(true);"""
+              webSettings.setAllowContentAccess(true);"""
 
           zoom_block = ""
           if zoom_enabled:
@@ -406,7 +388,7 @@ jobs:
           if autoplay_enabled:
               autoplay_ua_block += "webSettings.setMediaPlaybackRequiresUserGesture(false);\n"
           if pc_mode_enabled:
-              autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36");
+              autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/114.0.0.0 Safari/537.36");
               webSettings.setUseWideViewPort(true);
               webSettings.setLoadWithOverviewMode(true);"""
 
@@ -519,7 +501,6 @@ jobs:
               @Override
               protected void onCreate(Bundle savedInstanceState) {{
                   super.onCreate(savedInstanceState);
-                  {fullscreen_block}
                   setContentView(R.layout.activity_main);
 
                   mWebView = findViewById(R.id.webview);
@@ -548,7 +529,11 @@ jobs:
                           runOnUiThread(new Runnable() {{
                               @Override
                               public void run() {{
-                                  request.grant(request.getResources());
+                                  try {{
+                                      request.grant(request.getResources());
+                                  }} catch (Exception e) {{
+                                      e.printStackTrace();
+                                  }}
                               }}
                           }});
                       }}
