@@ -140,7 +140,7 @@ jobs:
           zoom_enabled = config.get("zoomEnabled", True)
           has_custom_splash = config.get("hasCustomSplash", False)
 
-          # Write app/build.gradle using safe placeholder replacements
+          # Write app/build.gradle using safe placeholder replacements (100% AndroidX free)
           app_build_gradle_template = """
           apply plugin: 'com.android.application'
           android {
@@ -165,7 +165,7 @@ jobs:
               }
           }
           dependencies {
-              // Pure native compilation
+              // Pure native compilation (no heavy AndroidX dependencies needed)
           }
           """
           app_build_gradle = app_build_gradle_template.replace("__PACKAGE_ID__", package_id)
@@ -246,7 +246,7 @@ jobs:
           elif screen_rotation == "landscape":
               orientation_mode = "landscape"
 
-          # Native platform theme selection (100% AndroidX Free)
+          # Native platform theme selection (100% AndroidX and XML Style Free to prevent compiler errors)
           main_theme = "@android:style/Theme.NoTitleBar.Fullscreen" if fullscreen_enabled else "@android:style/Theme.NoTitleBar"
 
           # Write AndroidManifest.xml
@@ -418,6 +418,13 @@ jobs:
               }
               if (!remaining.isEmpty()) {
                   requestPermissions(remaining.toArray(new String[0]), 101);
+              }
+          }
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_HIGH);
+              NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+              if (manager != null) {
+                  manager.createNotificationChannel(channel);
               }
           }
           """
@@ -616,7 +623,7 @@ jobs:
               }
 
               // Native JavascriptInterface Bridge Class
-              public static class WebAppInterface {
+              public class WebAppInterface {
                   private MainActivity mActivity;
 
                   public WebAppInterface(MainActivity activity) {
@@ -644,10 +651,15 @@ jobs:
                   }
               }
 
-              void showNativeNotification(String title, String message) {
+              private void showNativeNotification(String title, String message) {
                   Intent intent = new Intent(this, MainActivity.class);
                   intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                  PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+                  PendingIntent pendingIntent;
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                      pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+                  } else {
+                      pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                  }
 
                   Notification.Builder builder;
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -672,7 +684,7 @@ jobs:
                   }
               }
 
-              void saveBase64ToDownloads(String base64Data, String fileName) {
+              private void saveBase64ToDownloads(String base64Data, String fileName) {
                   try {
                       if (base64Data.contains(",")) {
                           base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
