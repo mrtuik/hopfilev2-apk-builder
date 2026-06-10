@@ -597,6 +597,35 @@ jobs:
               __SWIPE_DECLARATION__
               __PROGRESS_DECLARATION__
 
+              private android.os.Handler mPollHandler = new android.os.Handler();
+              private Runnable mPollRunnable = new Runnable() {
+                  @Override
+                  public void run() {
+                      if (mWebView != null) {
+                          mWebView.evaluateJavascript("javascript:(function(){ if(window.currentAudio) { return window.currentAudio.currentTime + ',' + window.currentAudio.duration + ',' + window.currentAudio.paused; } return ''; })()", new ValueCallback<String>() {
+                              @Override
+                              public void onReceiveValue(String value) {
+                                  if (value != null && !value.equals("null") && !value.equals("\\"\\"") && !value.isEmpty()) {
+                                      String clean = value.replace("\\"", "");
+                                      String[] parts = clean.split(",");
+                                      if (parts.length >= 3) {
+                                          try {
+                                              double currentTime = Double.parseDouble(parts[0]);
+                                              double duration = Double.parseDouble(parts[1]);
+                                              boolean paused = Boolean.parseBoolean(parts[2]);
+                                              updateMediaSessionState(currentTime, duration, !paused);
+                                          } catch (Exception e) {
+                                              e.printStackTrace();
+                                          }
+                                      }
+                                  }
+                              }
+                          });
+                      }
+                      mPollHandler.postDelayed(this, 1000);
+                  }
+              };
+
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
@@ -668,6 +697,7 @@ jobs:
                   createNotificationChannels();
                   mWebView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
                   mWebView.loadUrl("file:///android_asset/__HOMEPAGE__");
+                  handleNotificationAction(getIntent());
               }
 
               private void createNotificationChannels() {
@@ -675,39 +705,32 @@ jobs:
                       NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                       if (manager == null) return;
 
-                      // Standard Channel
                       NotificationChannel defaultChan = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_DEFAULT);
                       defaultChan.setDescription("Standard notifications for app activities.");
                       manager.createNotificationChannel(defaultChan);
 
-                      // Media Channel
                       NotificationChannel mediaChan = new NotificationChannel("media_channel", "Media Control", NotificationManager.IMPORTANCE_LOW);
                       mediaChan.setDescription("Controls and player configurations for active media playback.");
                       manager.createNotificationChannel(mediaChan);
 
-                      // Silent Channel
                       NotificationChannel silentChan = new NotificationChannel("silent_channel", "Silent Notifications", NotificationManager.IMPORTANCE_MIN);
                       silentChan.setDescription("Low importance notifications without sound.");
                       manager.createNotificationChannel(silentChan);
 
-                      // Heads-Up Channel
                       NotificationChannel highChan = new NotificationChannel("high_importance", "Urgent Updates", NotificationManager.IMPORTANCE_HIGH);
                       highChan.setDescription("Heads-up alert dialog style notifications.");
                       highChan.enableVibration(true);
                       manager.createNotificationChannel(highChan);
 
-                      // Progress Tracker Channel
                       NotificationChannel progressChan = new NotificationChannel("progress_channel", "Task Progress", NotificationManager.IMPORTANCE_LOW);
                       progressChan.setDescription("Shows file upload/download state trackers.");
                       manager.createNotificationChannel(progressChan);
 
-                      // Critical Channel for Call/Alarm
                       NotificationChannel criticalChan = new NotificationChannel("critical_channel", "Critical Reminders", NotificationManager.IMPORTANCE_HIGH);
                       criticalChan.setDescription("Alarms, phone calls, and critical action requests.");
                       criticalChan.enableVibration(true);
                       manager.createNotificationChannel(criticalChan);
 
-                      // Foreground Service Channel
                       NotificationChannel serviceChan = new NotificationChannel("foreground_tasks", "Background Services", NotificationManager.IMPORTANCE_DEFAULT);
                       serviceChan.setDescription("Foreground service status alerts.");
                       manager.createNotificationChannel(serviceChan);
@@ -1012,9 +1035,12 @@ jobs:
                   } else {
                       startService(serviceIntent);
                   }
+                  mPollHandler.removeCallbacks(mPollRunnable);
+                  mPollHandler.post(mPollRunnable);
               }
 
               public void stopMediaNotification() {
+                  mPollHandler.removeCallbacks(mPollRunnable);
                   Intent serviceIntent = new Intent(this, ForegroundService.class);
                   stopService(serviceIntent);
               }
@@ -1194,10 +1220,27 @@ jobs:
                       mWebView.post(new Runnable() {
                           @Override
                           public void run() {
-                              mWebView.loadUrl("javascript:if(window.onNotificationAction){window.onNotificationAction('" + actionCode + "');}");
+                              if (actionCode.equals("TOGGLE_PLAY_ACTION")) {
+                                  mWebView.loadUrl("javascript:var btn = document.getElementById('playerPlayPauseBtn'); if(btn) btn.click();");
+                              } else if (actionCode.equals("STOP_ACTION")) {
+                                  mWebView.loadUrl("javascript:var btn = document.getElementById('playerStopBtn'); if(btn) btn.click();");
+                              } else {
+                                  mWebView.loadUrl("javascript:if(window.onNotificationAction){window.onNotificationAction('" + actionCode + "');}");
+                              }
                           }
                       });
                   }
+              }
+
+              private void updateMediaSessionState(double currentTime, double duration, boolean isPlaying) {
+                  Intent intent = new Intent(this, ForegroundService.class);
+                  intent.setAction("UPDATE_PROGRESS");
+                  intent.putExtra("task_type", "media");
+                  intent.putExtra("trackName", "HopFile Player");
+                  intent.putExtra("currentTime", (long)(currentTime * 1000));
+                  intent.putExtra("duration", (long)(duration * 1000));
+                  intent.putExtra("isPlaying", isPlaying);
+                  startService(intent);
               }
 
               public static class WebAppInterface {
@@ -1501,8 +1544,18 @@ jobs:
                   public int onStartCommand(Intent intent, int flags, int startId) {
                       if (intent == null) return START_NOT_STICKY;
                       
+                      String action = intent.getAction();
                       String taskType = intent.getStringExtra("task_type");
                       if (taskType == null) taskType = "media";
+
+                      if ("UPDATE_PROGRESS".equals(action) && taskType.equals("media")) {
+                          long currentTime = intent.getLongExtra("currentTime", 0);
+                          long duration = intent.getLongExtra("duration", 0);
+                          boolean isPlaying = intent.getBooleanExtra("isPlaying", true);
+                          String trackName = intent.getStringExtra("trackName");
+                          updateMediaSession(trackName, "Playing Track", isPlaying, currentTime, duration);
+                          return START_STICKY;
+                      }
 
                       NotificationCompat.Builder builder;
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1588,6 +1641,86 @@ jobs:
 
                       startForeground(2002, builder.build());
                       return START_STICKY;
+                  }
+
+                  private void updateMediaSession(String trackName, String artistName, boolean isPlaying, long currentTimeMs, long durationMs) {
+                      if (mMediaSession == null) return;
+
+                      android.media.session.PlaybackState.Builder stateBuilder = new android.media.session.PlaybackState.Builder();
+                      stateBuilder.setActions(
+                              android.media.session.PlaybackState.ACTION_PLAY |
+                              android.media.session.PlaybackState.ACTION_PAUSE |
+                              android.media.session.PlaybackState.ACTION_SKIP_TO_NEXT |
+                              android.media.session.PlaybackState.ACTION_SKIP_TO_PREVIOUS |
+                              android.media.session.PlaybackState.ACTION_STOP |
+                              android.media.session.PlaybackState.ACTION_SEEK_TO
+                      );
+
+                      int state = isPlaying ? android.media.session.PlaybackState.STATE_PLAYING : android.media.session.PlaybackState.STATE_PAUSED;
+                      stateBuilder.setState(state, currentTimeMs, 1.0f);
+                      mMediaSession.setPlaybackState(stateBuilder.build());
+
+                      android.media.MediaMetadata.Builder metadataBuilder = new android.media.MediaMetadata.Builder();
+                      metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_TITLE, trackName);
+                      metadataBuilder.putString(android.media.MediaMetadata.METADATA_KEY_ARTIST, artistName);
+                      metadataBuilder.putLong(android.media.MediaMetadata.METADATA_KEY_DURATION, durationMs);
+
+                      android.graphics.Bitmap albumArt = android.graphics.BitmapFactory.decodeResource(getResources(), getApplicationInfo().icon);
+                      metadataBuilder.putBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART, albumArt);
+                      mMediaSession.setMetadata(metadataBuilder.build());
+
+                      NotificationCompat.Builder builder;
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          builder = new NotificationCompat.Builder(this, "media_channel");
+                      } else {
+                          builder = new NotificationCompat.Builder(this);
+                      }
+
+                      builder.setSmallIcon(getApplicationInfo().icon)
+                              .setContentTitle(trackName)
+                              .setContentText(artistName)
+                              .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                              .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                              .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+                              .setOngoing(isPlaying);
+
+                      Intent notificationIntent = new Intent(this, MainActivity.class);
+                      android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(this, 0, notificationIntent, android.app.PendingIntent.FLAG_IMMUTABLE);
+                      builder.setContentIntent(pendingIntent);
+
+                      Intent prevIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "PREV_ACTION");
+                      android.app.PendingIntent pPrev = android.app.PendingIntent.getActivity(this, 10, prevIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                      Intent playIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "TOGGLE_PLAY_ACTION");
+                      android.app.PendingIntent pPlay = android.app.PendingIntent.getActivity(this, 11, playIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                      Intent nextIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "NEXT_ACTION");
+                      android.app.PendingIntent pNext = android.app.PendingIntent.getActivity(this, 12, nextIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                      Intent stopIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "STOP_ACTION");
+                      android.app.PendingIntent pStop = android.app.PendingIntent.getActivity(this, 13, stopIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                      builder.addAction(android.R.drawable.ic_media_previous, "Previous", pPrev);
+                      if (isPlaying) {
+                          builder.addAction(android.R.drawable.ic_media_pause, "Pause", pPlay);
+                      } else {
+                          builder.addAction(android.R.drawable.ic_media_play, "Play", pPlay);
+                      }
+                      builder.addAction(android.R.drawable.ic_media_next, "Next", pNext);
+                      builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", pStop);
+
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                          builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                                  .setShowActionsInCompactView(0, 1, 2)
+                                  .setMediaSession(android.support.v4.media.session.MediaSessionCompat.Token.fromToken(mMediaSession.getSessionToken())));
+                      }
+
+                      if (isPlaying) {
+                          startForeground(2002, builder.build());
+                      } else {
+                          stopForeground(false);
+                          NotificationManagerCompat.from(this).notify(2002, builder.build());
+                      }
                   }
 
                   @Override
