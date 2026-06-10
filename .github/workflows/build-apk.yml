@@ -165,9 +165,7 @@ jobs:
               }
           }
           dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
-              implementation 'com.google.android.material:material:1.9.0'
+              // Pure native compilation
           }
           """
           app_build_gradle = app_build_gradle_template.replace("__PACKAGE_ID__", package_id)
@@ -177,55 +175,13 @@ jobs:
           with open("app/build.gradle", "w") as f:
               f.write(app_build_gradle.strip())
 
-          # Write colors.xml
-          colors_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="colorPrimary">__THEME_COLOR__</color>
-              <color name="colorPrimaryDark">__THEME_COLOR__</color>
-              <color name="colorAccent">__THEME_COLOR__</color>
-              <color name="splashBg">__SPLASH_BG_COLOR__</color>
-          </resources>
-          """
-          colors_xml = colors_xml_template.replace("__THEME_COLOR__", theme_color).replace("__SPLASH_BG_COLOR__", splash_bg_color)
-          with open("app/src/main/res/values/colors.xml", "w") as f:
-              f.write(colors_xml.strip())
-
-          # Write styles.xml
-          theme_style_parent = "Theme.AppCompat.Light.NoActionBar"
-          theme_items = ""
-          if fullscreen_enabled:
-              theme_items = """<item name="android:windowFullscreen">true</item>
-              <item name="android:windowNoTitle">true</item>"""
-          elif hide_title_bar:
-              theme_items = """<item name="android:windowNoTitle">true</item>"""
-          else:
-              theme_style_parent = "Theme.AppCompat.Light.DarkActionBar"
-
-          styles_xml_template = """<?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
-                  <item name="android:windowBackground">@color/splashBg</item>
-                  <item name="android:windowFullscreen">true</item>
-              </style>
-              <style name="AppTheme" parent="__THEME_STYLE_PARENT__">
-                  <item name="colorPrimary">@color/colorPrimary</item>
-                  <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-                  <item name="colorAccent">@color/colorAccent</item>
-                  __THEME_ITEMS__
-              </style>
-          </resources>
-          """
-          styles_xml = styles_xml_template.replace("__THEME_STYLE_PARENT__", theme_style_parent).replace("__THEME_ITEMS__", theme_items)
-          with open("app/src/main/res/values/styles.xml", "w") as f:
-              f.write(styles_xml.strip())
-
           # Write activity_splash.xml (Corrected XML declaration tag)
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
           activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:background="@color/splashBg">
+              android:background="__SPLASH_BG_COLOR__">
               <ImageView
                   android:id="@+id/splash_logo"
                   android:layout_width="160dp"
@@ -235,7 +191,7 @@ jobs:
                   android:visibility="visible" />
           </RelativeLayout>
           """
-          activity_splash_xml = activity_splash_xml_template.replace("__SPLASH_SRC_DRAWABLE__", splash_src_drawable)
+          activity_splash_xml = activity_splash_xml_template.replace("__SPLASH_SRC_DRAWABLE__", splash_src_drawable).replace("__SPLASH_BG_COLOR__", splash_bg_color)
           with open("app/src/main/res/layout/activity_splash.xml", "w") as f:
               f.write(activity_splash_xml.strip())
 
@@ -248,44 +204,25 @@ jobs:
                   android:layout_width="match_parent"
                   android:layout_height="6dp"
                   android:layout_alignParentTop="true"
-                  android:progressDrawable="@android:drawable/progress_horizontal"
                   android:visibility="gone" />"""
 
           layout_below_attr = 'android:layout_below="@id/progressBar"' if loading_ui_enabled else ""
-          
-          swipe_refresh_layout_start = ""
-          swipe_refresh_layout_end = ""
-          webview_layout_below = ""
-          
-          if swipe_refresh_enabled:
-              swipe_refresh_layout_start = """<androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                  android:id="@+id/swipeRefreshLayout"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  __LAYOUT_BELOW__>"""
-              swipe_refresh_layout_start = swipe_refresh_layout_start.replace("__LAYOUT_BELOW__", layout_below_attr)
-              swipe_refresh_layout_end = "</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>"
-          else:
-              webview_layout_below = layout_below_attr
+          webview_layout_below = layout_below_attr
 
           activity_main_xml_template = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent">
               __LOADING_PROGRESS_BAR__
-              __SWIPE_REFRESH_LAYOUT_START__
               <WebView
                   android:id="@+id/webview"
                   android:layout_width="match_parent"
                   android:layout_height="match_parent"
                   __WEBVIEW_LAYOUT_BELOW__ />
-              __SWIPE_REFRESH_LAYOUT_END__
           </RelativeLayout>
           """
           activity_main_xml = activity_main_xml_template.replace("__LOADING_PROGRESS_BAR__", loading_progress_bar)
-          activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_START__", swipe_refresh_layout_start)
           activity_main_xml = activity_main_xml.replace("__WEBVIEW_LAYOUT_BELOW__", webview_layout_below)
-          activity_main_xml = activity_main_xml.replace("__SWIPE_REFRESH_LAYOUT_END__", swipe_refresh_layout_end)
           
           with open("app/src/main/res/layout/activity_main.xml", "w") as f:
               f.write(activity_main_xml.strip())
@@ -309,6 +246,9 @@ jobs:
           elif screen_rotation == "landscape":
               orientation_mode = "landscape"
 
+          # Native platform theme selection (100% AndroidX Free)
+          main_theme = "@android:style/Theme.NoTitleBar.Fullscreen" if fullscreen_enabled else "@android:style/Theme.NoTitleBar"
+
           # Write AndroidManifest.xml
           android_manifest_xml_template = """<?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -326,12 +266,12 @@ jobs:
                   android:roundIcon="@mipmap/ic_launcher"
                   android:supportsRtl="true"
                   android:usesCleartextTraffic="true"
-                  android:theme="@style/AppTheme">
+                  android:theme="@android:style/Theme.NoTitleBar">
                   
                   <activity
                       android:name="com.example.runner.SplashActivity"
                       android:exported="true"
-                      android:theme="@style/SplashTheme"
+                      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
                       android:screenOrientation="__ORIENTATION_MODE__">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -343,7 +283,8 @@ jobs:
                       android:name="com.example.runner.MainActivity"
                       android:exported="false"
                       android:configChanges="orientation|screenSize|keyboardHidden"
-                      android:screenOrientation="__ORIENTATION_MODE__">
+                      android:screenOrientation="__ORIENTATION_MODE__"
+                      android:theme="__MAIN_THEME__">
                   </activity>
               </application>
           </manifest>
@@ -353,18 +294,19 @@ jobs:
           android_manifest_xml = android_manifest_xml.replace("__NOTIFICATION_PERMISSION_MANIFEST__", notification_permission_manifest)
           android_manifest_xml = android_manifest_xml.replace("__STORAGE_PERMISSION_MANIFEST__", storage_permission_manifest)
           android_manifest_xml = android_manifest_xml.replace("__ORIENTATION_MODE__", orientation_mode)
+          android_manifest_xml = android_manifest_xml.replace("__MAIN_THEME__", main_theme)
           
           with open("app/src/main/AndroidManifest.xml", "w") as f:
               f.write(android_manifest_xml.strip())
 
-          # Write SplashActivity.java
+          # Write SplashActivity.java (Standard android.app.Activity - 100% AndroidX free)
           splash_activity_java_template = """package com.example.runner;
-          import androidx.appcompat.app.AppCompatActivity;
+          import android.app.Activity;
           import android.content.Intent;
           import android.os.Bundle;
           import android.os.Handler;
 
-          public class SplashActivity extends AppCompatActivity {
+          public class SplashActivity extends Activity {
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
@@ -385,11 +327,8 @@ jobs:
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
 
-          # Generate MainActivity.java
-          swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
-          swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
+          # Generate MainActivity.java (Standard android.app.Activity - 100% AndroidX and Lambda free)
           progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
-          
           progress_init_block = "mProgress = findViewById(R.id.progressBar);" if loading_ui_enabled else ""
           progress_update_block = """if (mProgress != null) {
               mProgress.setProgress(newProgress);
@@ -419,20 +358,6 @@ jobs:
               autoplay_ua_block += """webSettings.setUserAgentString("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/114.0.0.0 Safari/537.36");
               webSettings.setUseWideViewPort(true);
               webSettings.setLoadWithOverviewMode(true);"""
-
-          swipe_refresh_code_block = ""
-          swipe_refresh_stop_code_block = ""
-          if swipe_refresh_enabled:
-              swipe_refresh_code_block = """mSwipeRefresh = findViewById(R.id.swipeRefreshLayout);
-              mSwipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                  @Override
-                  public void onRefresh() {
-                      mWebView.reload();
-                  }
-              });"""
-              swipe_refresh_stop_code_block = """if (mSwipeRefresh != null) {
-                  mSwipeRefresh.setRefreshing(false);
-              }"""
 
           long_press_code_block = ""
           if not long_press_enabled:
@@ -495,20 +420,15 @@ jobs:
                   requestPermissions(remaining.toArray(new String[0]), 101);
               }
           }
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-              NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_HIGH);
-              NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-              if (manager != null) {
-                  manager.createNotificationChannel(channel);
-              }
-          }
           """
 
           main_activity_java_template = """package com.example.runner;
 
           import android.Manifest;
           import android.app.Activity;
+          import android.app.AlertDialog;
           import android.app.DownloadManager;
+          import android.app.Notification;
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
           import android.app.PendingIntent;
@@ -516,8 +436,10 @@ jobs:
           import android.content.ContentResolver;
           import android.content.ContentValues;
           import android.content.Context;
+          import android.content.DialogInterface;
           import android.content.Intent;
           import android.content.pm.PackageManager;
+          import android.graphics.Color;
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
@@ -538,18 +460,16 @@ jobs:
           import android.webkit.WebViewClient;
           import android.widget.ProgressBar;
           import android.widget.Toast;
-          import androidx.core.content.ContextCompat;
+
           import java.io.File;
           import java.io.FileOutputStream;
           import java.io.OutputStream;
           import java.util.ArrayList;
-          __SWIPE_IMPORT__
 
-          public class MainActivity extends AppCompatActivity {
+          public class MainActivity extends Activity {
               private WebView mWebView;
               private ValueCallback<Uri[]> mUploadMessage;
               private final static int FILECHOOSER_RESULTCODE = 1;
-              __SWIPE_DECLARATION__
               __PROGRESS_DECLARATION__
 
               @Override
@@ -557,9 +477,18 @@ jobs:
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
 
+                  // Setup High Importance Notification Channel on start (Ensures notifications show on Android 8+)
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_HIGH);
+                      NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                      if (manager != null) {
+                          manager.createNotificationChannel(channel);
+                      }
+                  }
+
                   mWebView = findViewById(R.id.webview);
                   
-                  // Setup clean JavascriptInterface Bridge to catch Web Notification triggers & local binary writers
+                  // Setup clean Static JavascriptInterface Bridge to catch Web Notification triggers & local binary writers
                   mWebView.addJavascriptInterface(new WebAppInterface(this), "AndroidInterface");
                   
                   __PROGRESS_INIT__
@@ -569,17 +498,10 @@ jobs:
                   __LOCAL_STORAGE__
                   __ZOOM__
                   __AUTOPLAY_UA__
-                  __SWIPE_REFRESH_CODE__
                   __LONG_PRESS__
                   __DOWNLOAD_MANAGER__
 
-                  mWebView.setWebViewClient(new WebViewClient() {
-                      @Override
-                      public void onPageFinished(WebView view, String url) {
-                          super.onPageFinished(view, url);
-                          __SWIPE_REFRESH_STOP_CODE__
-                      }
-                  });
+                  mWebView.setWebViewClient(new WebViewClient());
 
                   mWebView.setWebChromeClient(new WebChromeClient() {
                       @Override
@@ -671,63 +593,78 @@ jobs:
               }
 
               private void showExitDialog() {
-                  androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+                  AlertDialog.Builder builder = new AlertDialog.Builder(this);
                   builder.setTitle("Exit Application");
                   builder.setMessage("Are you sure you want to exit?");
-                  builder.setPositiveButton("Exit", new android.content.DialogInterface.OnClickListener() {
+                  builder.setPositiveButton("Exit", new DialogInterface.OnClickListener() {
                       @Override
-                      public void onClick(android.content.DialogInterface dialog, int which) {
+                      public void onClick(DialogInterface dialog, int which) {
                           finish();
                       }
                   });
-                  builder.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {
+                  builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
                       @Override
-                      public void onClick(android.content.DialogInterface dialog, int which) {
+                      public void onClick(DialogInterface dialog, int which) {
                           dialog.dismiss();
                       }
                   });
-                  androidx.appcompat.app.AlertDialog dialog = builder.create();
+                  AlertDialog dialog = builder.create();
                   dialog.show();
-                  int colorPrimary = ContextCompat.getColor(MainActivity.this, R.color.colorPrimary);
-                  dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(colorPrimary);
-                  dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
+                  int colorPrimary = Color.parseColor("__THEME_COLOR__");
+                  dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(colorPrimary);
+                  dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
               }
 
               // Native JavascriptInterface Bridge Class
-              public class WebAppInterface {
+              public static class WebAppInterface {
+                  private MainActivity mActivity;
+
+                  public WebAppInterface(MainActivity activity) {
+                      this.mActivity = activity;
+                  }
+
                   @android.webkit.JavascriptInterface
                   public void showNotification(final String title, final String message) {
-                      runOnUiThread(new Runnable() {
+                      mActivity.runOnUiThread(new Runnable() {
                           @Override
                           public void run() {
-                              showNativeNotification(title, message);
+                              mActivity.showNativeNotification(title, message);
                           }
                       });
                   }
 
                   @android.webkit.JavascriptInterface
                   public void saveAudioFile(final String base64Data, final String fileName) {
-                      runOnUiThread(new Runnable() {
+                      mActivity.runOnUiThread(new Runnable() {
                           @Override
                           public void run() {
-                              saveBase64ToDownloads(base64Data, fileName);
+                              mActivity.saveBase64ToDownloads(base64Data, fileName);
                           }
                       });
                   }
               }
 
-              private void showNativeNotification(String title, String message) {
+              void showNativeNotification(String title, String message) {
                   Intent intent = new Intent(this, MainActivity.class);
                   intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                   PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
 
-                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
-                          .setSmallIcon(R.mipmap.ic_launcher)
-                          .setContentTitle(title)
-                          .setContentText(message)
-                          .setPriority(NotificationCompat.PRIORITY_HIGH)
-                          .setContentIntent(pendingIntent)
-                          .setAutoCancel(true);
+                  Notification.Builder builder;
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      builder = new Notification.Builder(this, "default");
+                  } else {
+                      builder = new Notification.Builder(this);
+                  }
+
+                  builder.setSmallIcon(android.R.drawable.stat_notify_chat)
+                         .setContentTitle(title)
+                         .setContentText(message)
+                         .setAutoCancel(true)
+                         .setContentIntent(pendingIntent);
+
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                      builder.setColor(Color.parseColor("__THEME_COLOR__"));
+                  }
 
                   NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
                   if (notificationManager != null) {
@@ -735,7 +672,7 @@ jobs:
                   }
               }
 
-              private void saveBase64ToDownloads(String base64Data, String fileName) {
+              void saveBase64ToDownloads(String base64Data, String fileName) {
                   try {
                       if (base64Data.contains(",")) {
                           base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
@@ -780,20 +717,17 @@ jobs:
           }
           """
           
-          main_activity_java = main_activity_java_template.replace("__SWIPE_IMPORT__", swipe_import_block)
-          main_activity_java = main_activity_java.replace("__SWIPE_DECLARATION__", swipe_declaration_block)
-          main_activity_java = main_activity_java.replace("__PROGRESS_DECLARATION__", progress_declaration_block)
+          main_activity_java = main_activity_java_template.replace("__PROGRESS_DECLARATION__", progress_declaration_block)
           main_activity_java = main_activity_java.replace("__PROGRESS_INIT__", progress_init_block)
           main_activity_java = main_activity_java.replace("__LOCAL_STORAGE__", local_storage_block)
           main_activity_java = main_activity_java.replace("__ZOOM__", zoom_block)
           main_activity_java = main_activity_java.replace("__AUTOPLAY_UA__", autoplay_ua_block)
-          main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_CODE__", swipe_refresh_code_block)
           main_activity_java = main_activity_java.replace("__LONG_PRESS__", long_press_code_block)
           main_activity_java = main_activity_java.replace("__DOWNLOAD_MANAGER__", download_manager_block)
-          main_activity_java = main_activity_java.replace("__SWIPE_REFRESH_STOP_CODE__", swipe_refresh_stop_code_block)
           main_activity_java = main_activity_java.replace("__PROGRESS_UPDATE__", progress_update_block)
           main_activity_java = main_activity_java.replace("__PERMISSION_MANAGER__", permission_manager_block)
           main_activity_java = main_activity_java.replace("__HOMEPAGE__", homepage)
+          main_activity_java = main_activity_java.replace("__THEME_COLOR__", theme_color)
 
           with open("app/src/main/java/com/example/runner/MainActivity.java", "w") as f:
               f.write(main_activity_java.strip())
