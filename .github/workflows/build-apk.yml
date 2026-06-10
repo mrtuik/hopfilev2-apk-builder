@@ -168,6 +168,7 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
               implementation 'com.google.android.material:material:1.9.0'
+              implementation 'androidx.media:media:1.6.0'
           }
           """
           app_build_gradle = app_build_gradle_template.replace("__PACKAGE_ID__", package_id)
@@ -218,6 +219,48 @@ jobs:
           styles_xml = styles_xml_template.replace("__THEME_STYLE_PARENT__", theme_style_parent).replace("__THEME_ITEMS__", theme_items)
           with open("app/src/main/res/values/styles.xml", "w") as f:
               f.write(styles_xml.strip())
+
+          # Write custom_notification.xml layout
+          custom_notification_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="64dp"
+              android:orientation="horizontal"
+              android:padding="8dp"
+              android:background="#1E293B">
+              <ImageView
+                  android:id="@+id/custom_icon"
+                  android:layout_width="48dp"
+                  android:layout_height="48dp"
+                  android:src="@mipmap/ic_launcher"
+                  android:layout_gravity="center_vertical"/>
+              <LinearLayout
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:orientation="vertical"
+                  android:layout_marginLeft="12dp"
+                  android:layout_gravity="center_vertical">
+                  <TextView
+                      android:id="@+id/custom_title"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Custom Title"
+                      android:textColor="#F8FAFC"
+                      android:textSize="14sp"
+                      android:textStyle="bold"/>
+                  <TextView
+                      android:id="@+id/custom_text"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Custom Message Body"
+                      android:textColor="#94A3B8"
+                      android:textSize="12sp"/>
+              </LinearLayout>
+          </LinearLayout>
+          """
+          with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
+              f.write(custom_notification_xml.strip())
 
           # Write activity_splash.xml
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
@@ -289,48 +332,6 @@ jobs:
           
           with open("app/src/main/res/layout/activity_main.xml", "w") as f:
               f.write(activity_main_xml.strip())
-
-          # Write custom_notification.xml layout
-          custom_notification_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="64dp"
-              android:orientation="horizontal"
-              android:padding="8dp"
-              android:background="#1E293B">
-              <ImageView
-                  android:id="@+id/custom_icon"
-                  android:layout_width="48dp"
-                  android:layout_height="48dp"
-                  android:src="@mipmap/ic_launcher"
-                  android:layout_gravity="center_vertical"/>
-              <LinearLayout
-                  android:layout_width="0dp"
-                  android:layout_height="wrap_content"
-                  android:layout_weight="1"
-                  android:orientation="vertical"
-                  android:layout_marginLeft="12dp"
-                  android:layout_gravity="center_vertical">
-                  <TextView
-                      android:id="@+id/custom_title"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="Custom Title"
-                      android:textColor="#F8FAFC"
-                      android:textSize="14sp"
-                      android:textStyle="bold"/>
-                  <TextView
-                      android:id="@+id/custom_text"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="Custom Message Body"
-                      android:textColor="#94A3B8"
-                      android:textSize="12sp"/>
-              </LinearLayout>
-          </LinearLayout>
-          """
-          with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
-              f.write(custom_notification_xml.strip())
 
           # Handle Permissions
           camera_permission_manifest = '<uses-permission android:name="android.permission.CAMERA" />' if camera_enabled else ""
@@ -578,6 +579,8 @@ jobs:
           import android.widget.ProgressBar;
           import android.widget.Toast;
           import androidx.core.content.ContextCompat;
+          import androidx.core.app.NotificationCompat;
+          import androidx.core.app.NotificationManagerCompat;
           import android.content.ContentValues;
           import android.provider.MediaStore;
           import java.io.OutputStream;
@@ -663,7 +666,7 @@ jobs:
                   mWebView.setBackgroundColor(0);
                   __PERMISSION_MANAGER__
                   createNotificationChannels();
-                  mWebView.addJavascriptInterface(this, "AndroidApp");
+                  mWebView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
                   mWebView.loadUrl("file:///android_asset/__HOMEPAGE__");
               }
 
@@ -703,218 +706,151 @@ jobs:
                       criticalChan.setDescription("Alarms, phone calls, and critical action requests.");
                       criticalChan.enableVibration(true);
                       manager.createNotificationChannel(criticalChan);
+
+                      // Foreground Service Channel
+                      NotificationChannel serviceChan = new NotificationChannel("foreground_tasks", "Background Services", NotificationManager.IMPORTANCE_DEFAULT);
+                      serviceChan.setDescription("Foreground service status alerts.");
+                      manager.createNotificationChannel(serviceChan);
                   }
               }
 
-              @JavascriptInterface
               public void showNotification(String title, String message) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "default");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setAutoCancel(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify((int) System.currentTimeMillis(), builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify((int) System.currentTimeMillis(), builder.build());
               }
 
-              @JavascriptInterface
               public void showBigTextNotification(String title, String message, String bigText, String summary) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "default");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
-                          .setStyle(new Notification.BigTextStyle()
+                          .setStyle(new NotificationCompat.BigTextStyle()
                                   .bigText(bigText)
                                   .setSummaryText(summary))
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setAutoCancel(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(2006, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(2006, builder.build());
               }
 
-              @JavascriptInterface
               public void showBigPictureNotification(String title, String message, String base64Image) {
                   try {
                       byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
                       android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
 
-                      Notification.Builder builder;
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                          builder = new Notification.Builder(this, "default");
-                      } else {
-                          builder = new Notification.Builder(this);
-                      }
-
-                      builder.setSmallIcon(getApplicationInfo().icon)
+                      NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                              .setSmallIcon(getApplicationInfo().icon)
                               .setContentTitle(title)
                               .setContentText(message)
-                              .setStyle(new Notification.BigPictureStyle()
+                              .setStyle(new NotificationCompat.BigPictureStyle()
                                       .bigPicture(bitmap))
+                              .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                               .setAutoCancel(true);
 
-                      NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                      if (manager != null) {
-                          manager.notify(2007, builder.build());
-                      }
+                      NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                      manager.notify(2007, builder.build());
                   } catch (Exception e) {
                       e.printStackTrace();
                       showNotification(title, message);
                   }
               }
 
-              @JavascriptInterface
               public void showInboxNotification(String title, String message, String linesJsonArray) {
                   try {
                       org.json.JSONArray jsonArray = new org.json.JSONArray(linesJsonArray);
-                      Notification.Builder builder;
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                          builder = new Notification.Builder(this, "default");
-                      } else {
-                          builder = new Notification.Builder(this);
-                      }
+                      NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                              .setSmallIcon(getApplicationInfo().icon)
+                              .setContentTitle(title)
+                              .setContentText(message);
 
-                      Notification.InboxStyle inboxStyle = new Notification.InboxStyle();
+                      NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
                       for (int i = 0; i < jsonArray.length(); i++) {
                           inboxStyle.addLine(jsonArray.getString(i));
                       }
 
-                      builder.setSmallIcon(getApplicationInfo().icon)
-                              .setContentTitle(title)
-                              .setContentText(message)
-                              .setStyle(inboxStyle)
+                      builder.setStyle(inboxStyle)
+                              .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                               .setAutoCancel(true);
 
-                      NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                      if (manager != null) {
-                          manager.notify(2008, builder.build());
-                      }
+                      NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                      manager.notify(2008, builder.build());
                   } catch (Exception e) {
                       e.printStackTrace();
                       showNotification(title, message);
                   }
               }
 
-              @JavascriptInterface
               public void showActionNotification(String title, String message, String buttonText, String extraValue) {
                   Intent actionIntent = new Intent(this, MainActivity.class);
                   actionIntent.putExtra("notification_action", extraValue);
                   actionIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                   android.app.PendingIntent pIntent = android.app.PendingIntent.getActivity(this, (int)System.currentTimeMillis(), actionIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
 
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "default");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                          .addAction(android.R.drawable.ic_menu_send, buttonText, pIntent)
                           .setAutoCancel(true);
 
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                      builder.addAction(new Notification.Action.Builder(
-                              android.graphics.drawable.Icon.createWithResource(this, android.R.drawable.ic_menu_send), buttonText, pIntent).build());
-                  }
-
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(2009, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(2009, builder.build());
               }
 
-              @JavascriptInterface
               public void showMessagingNotification(String senderName, String messageText, String conversationTitle) {
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                      Notification.MessagingStyle style = new Notification.MessagingStyle("Me")
-                              .setConversationTitle(conversationTitle)
-                              .addMessage(messageText, System.currentTimeMillis(), senderName);
+                  NotificationCompat.MessagingStyle style = new NotificationCompat.MessagingStyle("Me")
+                          .setConversationTitle(conversationTitle)
+                          .addMessage(messageText, System.currentTimeMillis(), senderName);
 
-                      Notification.Builder builder;
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                          builder = new Notification.Builder(this, "default");
-                      } else {
-                          builder = new Notification.Builder(this);
-                      }
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
+                          .setStyle(style)
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                          .setAutoCancel(true);
 
-                      builder.setSmallIcon(getApplicationInfo().icon)
-                              .setStyle(style)
-                              .setAutoCancel(true);
-
-                      NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                      if (manager != null) {
-                          manager.notify(2010, builder.build());
-                      }
-                  } else {
-                      showNotification(senderName + ": " + messageText, conversationTitle);
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(2010, builder.build());
               }
 
-              @JavascriptInterface
               public void showFullScreenNotification(String title, String message) {
                   Intent fullScreenIntent = new Intent(this, MainActivity.class);
                   android.app.PendingIntent pIntent = android.app.PendingIntent.getActivity(this, 0, fullScreenIntent, android.app.PendingIntent.FLAG_IMMUTABLE);
 
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "critical_channel");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "critical_channel")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
-                          .setPriority(Notification.PRIORITY_MAX)
-                          .setCategory(Notification.CATEGORY_CALL)
+                          .setPriority(NotificationCompat.PRIORITY_MAX)
+                          .setCategory(NotificationCompat.CATEGORY_CALL)
                           .setFullScreenIntent(pIntent, true)
                           .setAutoCancel(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(2011, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(2011, builder.build());
               }
 
-              @JavascriptInterface
               public void showProgressNotification(String title, String message, int progress, int max, boolean indeterminate, int id) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "progress_channel");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "progress_channel")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
                           .setOngoing(progress < max)
+                          .setPriority(NotificationCompat.PRIORITY_LOW)
                           .setProgress(max, progress, indeterminate);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(id, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(id, builder.build());
               }
 
-              @JavascriptInterface
               public void scheduleNotification(String title, String message, final int delaySeconds) {
                   Intent alarmIntent = new Intent(this, NotificationReceiver.class);
                   alarmIntent.putExtra("title", title);
@@ -938,100 +874,62 @@ jobs:
                   }
               }
 
-              @JavascriptInterface
               public void showSilentNotification(String title, String message) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "silent_channel");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "silent_channel")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setPriority(NotificationCompat.PRIORITY_MIN)
                           .setAutoCancel(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(2012, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(2012, builder.build());
               }
 
-              @JavascriptInterface
               public void showHeadsUpNotification(String title, String message) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "high_importance");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "high_importance")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
-                          .setPriority(Notification.PRIORITY_HIGH)
-                          .setDefaults(Notification.DEFAULT_ALL)
+                          .setPriority(NotificationCompat.PRIORITY_HIGH)
+                          .setDefaults(NotificationCompat.DEFAULT_ALL)
                           .setAutoCancel(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(2013, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(2013, builder.build());
               }
 
-              @JavascriptInterface
               public void showOngoingNotification(String title, String message, int id) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "default");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title)
                           .setContentText(message)
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setOngoing(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(id, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(id, builder.build());
               }
 
-              @JavascriptInterface
               public void showGroupedNotifications(String groupKey, String title1, String text1, String title2, String text2) {
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager == null) return;
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
 
-                  Notification.Builder child1;
-                  Notification.Builder child2;
-                  Notification.Builder summary;
-
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      child1 = new Notification.Builder(this, "default");
-                      child2 = new Notification.Builder(this, "default");
-                      summary = new Notification.Builder(this, "default");
-                  } else {
-                      child1 = new Notification.Builder(this);
-                      child2 = new Notification.Builder(this);
-                      summary = new Notification.Builder(this);
-                  }
-
-                  child1.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder child1 = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title1)
                           .setContentText(text1)
                           .setGroup(groupKey)
                           .setAutoCancel(true);
 
-                  child2.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder child2 = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle(title2)
                           .setContentText(text2)
                           .setGroup(groupKey)
                           .setAutoCancel(true);
 
-                  summary.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder summary = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle("Group Summary")
                           .setContentText("You have new group updates")
                           .setGroup(groupKey)
@@ -1043,54 +941,37 @@ jobs:
                   manager.notify(3003, summary.build());
               }
 
-              @JavascriptInterface
               public void showCustomLayoutNotification(String title, String message) {
                   android.widget.RemoteViews remoteViews = new android.widget.RemoteViews(getPackageName(), R.layout.custom_notification);
                   remoteViews.setImageViewResource(R.id.custom_icon, getApplicationInfo().icon);
                   remoteViews.setTextViewText(R.id.custom_title, title);
                   remoteViews.setTextViewText(R.id.custom_text, message);
 
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "default");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setCustomContentView(remoteViews)
+                          .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                           .setAutoCancel(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(2014, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(2014, builder.build());
               }
 
-              @JavascriptInterface
               public void updateBadgeCount(int count) {
-                  Notification.Builder builder;
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      builder = new Notification.Builder(this, "default");
-                  } else {
-                      builder = new Notification.Builder(this);
-                  }
-
-                  builder.setSmallIcon(getApplicationInfo().icon)
+                  NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                          .setSmallIcon(getApplicationInfo().icon)
                           .setContentTitle("App Alert")
                           .setContentText("Active Badge count set to " + count)
                           .setNumber(count)
                           .setAutoCancel(true);
 
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.notify(9999, builder.build());
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.notify(9999, builder.build());
               }
 
-              @JavascriptInterface
               public void startMediaNotification(String trackName, String artistName, boolean isPlaying) {
                   Intent serviceIntent = new Intent(this, ForegroundService.class);
+                  serviceIntent.putExtra("task_type", "media");
                   serviceIntent.putExtra("trackName", trackName);
                   serviceIntent.putExtra("artistName", artistName);
                   serviceIntent.putExtra("isPlaying", isPlaying);
@@ -1101,29 +982,38 @@ jobs:
                   }
               }
 
-              @JavascriptInterface
               public void stopMediaNotification() {
                   Intent serviceIntent = new Intent(this, ForegroundService.class);
                   stopService(serviceIntent);
               }
 
-              @JavascriptInterface
+              public void startForegroundTask(String taskType, String title, String message) {
+                  Intent serviceIntent = new Intent(this, ForegroundService.class);
+                  serviceIntent.putExtra("task_type", taskType);
+                  serviceIntent.putExtra("title", title);
+                  serviceIntent.putExtra("message", message);
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      startForegroundService(serviceIntent);
+                  } else {
+                      startService(serviceIntent);
+                  }
+              }
+
+              public void stopForegroundTask() {
+                  Intent serviceIntent = new Intent(this, ForegroundService.class);
+                  stopService(serviceIntent);
+              }
+
               public void cancelNotification(int id) {
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.cancel(id);
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.cancel(id);
               }
 
-              @JavascriptInterface
               public void cancelAllNotifications() {
-                  NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-                  if (manager != null) {
-                      manager.cancelAll();
-                  }
+                  NotificationManagerCompat manager = NotificationManagerCompat.from(this);
+                  manager.cancelAll();
               }
 
-              @JavascriptInterface
               public void saveBase64File(final String base64Data, final String mimeType, final String fileName) {
                   try {
                       final byte[] fileBytes = Base64.decode(base64Data, Base64.DEFAULT);
@@ -1177,70 +1067,209 @@ jobs:
                   }
               }
 
-              @Override
-              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-                  super.onActivityResult(requestCode, resultCode, data);
-                  if (requestCode == FILECHOOSER_RESULTCODE) {
-                      if (mUploadMessage == null) return;
-                      Uri[] results = null;
-                      if (resultCode == Activity.RESULT_OK) {
-                          if (data != null) {
-                              String dataString = data.getDataString();
-                              ClipData clipData = data.getClipData();
-                              if (clipData != null) {
-                                  results = new Uri[clipData.getItemCount()];
-                                  for (int i = 0; i < clipData.getItemCount(); i++) {
-                                      ClipData.Item item = clipData.getItemAt(i);
-                                      results[i] = item.getUri();
-                                  }
-                              }
-                              if (dataString != null) {
-                                  results = new Uri[]{Uri.parse(dataString)};
-                              }
-                          }
-                      }
-                      mUploadMessage.onReceiveValue(results);
-                      mUploadMessage = null;
-                  }
-              }
-
-              @Override
-              public void onBackPressed() {
-                  mWebView.evaluateJavascript("javascript:if(window.onBackPressed){window.onBackPressed();}else{'default';}", new ValueCallback<String>() {
+              public void startNativeDownload(final String urlString, final String fileName) {
+                  new Thread(new Runnable() {
                       @Override
-                      public void onReceiveValue(String value) {
-                          if (value == null || value.equals("\\"default\\"") || value.equals("null") || value.equals("false")) {
-                              if (mWebView.canGoBack()) {
-                                  mWebView.goBack();
+                      public void run() {
+                          Uri uri = null;
+                          java.io.InputStream input = null;
+                          java.io.OutputStream output = null;
+                          java.net.HttpURLConnection connection = null;
+                          final int notificationId = 1001;
+                          
+                          try {
+                              showProgressNotification("Download Started", fileName, 0, 100, true, notificationId);
+                              
+                              java.net.URL url = new java.net.URL(urlString);
+                              connection = (java.net.HttpURLConnection) url.openConnection();
+                              connection.connect();
+                              
+                              if (connection.getResponseCode() != java.net.HttpURLConnection.HTTP_OK) {
+                                  throw new Exception("Server returned HTTP " + connection.getResponseCode());
+                              }
+                              
+                              int fileLength = connection.getContentLength();
+                              input = connection.getInputStream();
+                              
+                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                  ContentValues values = new ContentValues();
+                                  values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                                  values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                                  uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                                  if (uri == null) throw new Exception("Failed to insert media store record");
+                                  output = getContentResolver().openOutputStream(uri);
                               } else {
-                                  showExitDialog();
+                                  java.io.File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                                  java.io.File file = new java.io.File(downloadDir, fileName);
+                                  output = new java.io.FileOutputStream(file);
                               }
+                              
+                              byte[] data = new byte[4096];
+                              long total = 0;
+                              int count;
+                              int lastProgress = 0;
+                              
+                              while ((count = input.read(data)) != -1) {
+                                  total += count;
+                                  if (fileLength > 0) {
+                                      int progress = (int) (total * 100 / fileLength);
+                                      if (progress - lastProgress >= 5 || progress == 100) {
+                                          lastProgress = progress;
+                                          showProgressNotification("Downloading", fileName, progress, 100, false, notificationId);
+                                      }
+                                  }
+                                  output.write(data, 0, count);
+                              }
+                              
+                              showNotification("Download Completed", fileName + " saved successfully.");
+                              runOnUiThread(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      Toast.makeText(MainActivity.this, "Download Complete: " + fileName, Toast.LENGTH_SHORT).show();
+                                  }
+                              });
+                              
+                          } catch (final Exception e) {
+                              e.printStackTrace();
+                              showNotification("Download Failed", fileName + " failed: " + e.getMessage());
+                              runOnUiThread(new Runnable() {
+                                  @Override
+                                  public void run() {
+                                      Toast.makeText(MainActivity.this, "Download Error: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                                  }
+                              });
+                          } finally {
+                              try {
+                                  if (output != null) output.close();
+                                  if (input != null) input.close();
+                              } catch (java.io.IOException ignored) {}
+                              if (connection != null) connection.disconnect();
                           }
                       }
-                  });
+                  }).start();
               }
 
-              private void showExitDialog() {
-                  androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
-                  builder.setTitle("Exit Application");
-                  builder.setMessage("Are you sure you want to exit?");
-                  builder.setPositiveButton("Exit", new android.content.DialogInterface.OnClickListener() {
-                      @Override
-                      public void onClick(android.content.DialogInterface dialog, int which) {
-                          finish();
-                      }
-                  });
-                  builder.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {
-                      @Override
-                      public void onClick(android.content.DialogInterface dialog, int which) {
-                          dialog.dismiss();
-                      }
-                  });
-                  androidx.appcompat.app.AlertDialog dialog = builder.create();
-                  dialog.show();
-                  int colorPrimary = ContextCompat.getColor(MainActivity.this, R.color.colorPrimary);
-                  dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(colorPrimary);
-                  dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
+              public static class WebAppInterface {
+                  private MainActivity mContext;
+
+                  public WebAppInterface(MainActivity context) {
+                      this.mContext = context;
+                  }
+
+                  @JavascriptInterface
+                  public void showNotification(String title, String message) {
+                      mContext.showNotification(title, message);
+                  }
+
+                  @JavascriptInterface
+                  public void showBigTextNotification(String title, String message, String bigText, String summary) {
+                      mContext.showBigTextNotification(title, message, bigText, summary);
+                  }
+
+                  @JavascriptInterface
+                  public void showBigPictureNotification(String title, String message, String base64Image) {
+                      mContext.showBigPictureNotification(title, message, base64Image);
+                  }
+
+                  @JavascriptInterface
+                  public void showInboxNotification(String title, String message, String linesJsonArray) {
+                      mContext.showInboxNotification(title, message, linesJsonArray);
+                  }
+
+                  @JavascriptInterface
+                  public void showActionNotification(String title, String message, String buttonText, String extraValue) {
+                      mContext.showActionNotification(title, message, buttonText, extraValue);
+                  }
+
+                  @JavascriptInterface
+                  public void showMessagingNotification(String senderName, String messageText, String conversationTitle) {
+                      mContext.showMessagingNotification(senderName, messageText, conversationTitle);
+                  }
+
+                  @JavascriptInterface
+                  public void showFullScreenNotification(String title, String message) {
+                      mContext.showFullScreenNotification(title, message);
+                  }
+
+                  @JavascriptInterface
+                  public void showProgressNotification(String title, String message, int progress, int max, boolean indeterminate, int id) {
+                      mContext.showProgressNotification(title, message, progress, max, indeterminate, id);
+                  }
+
+                  @JavascriptInterface
+                  public void scheduleNotification(String title, String message, int delaySeconds) {
+                      mContext.scheduleNotification(title, message, delaySeconds);
+                  }
+
+                  @JavascriptInterface
+                  public void showSilentNotification(String title, String message) {
+                      mContext.showSilentNotification(title, message);
+                  }
+
+                  @JavascriptInterface
+                  public void showHeadsUpNotification(String title, String message) {
+                      mContext.showHeadsUpNotification(title, message);
+                  }
+
+                  @JavascriptInterface
+                  public void showOngoingNotification(String title, String message, int id) {
+                      mContext.showOngoingNotification(title, message, id);
+                  }
+
+                  @JavascriptInterface
+                  public void showGroupedNotifications(String groupKey, String title1, String text1, String title2, String text2) {
+                      mContext.showGroupedNotifications(groupKey, title1, text1, title2, text2);
+                  }
+
+                  @JavascriptInterface
+                  public void showCustomLayoutNotification(String title, String message) {
+                      mContext.showCustomLayoutNotification(title, message);
+                  }
+
+                  @JavascriptInterface
+                  public void updateBadgeCount(int count) {
+                      mContext.updateBadgeCount(count);
+                  }
+
+                  @JavascriptInterface
+                  public void startMediaNotification(String trackName, String artistName, boolean isPlaying) {
+                      mContext.startMediaNotification(trackName, artistName, isPlaying);
+                  }
+
+                  @JavascriptInterface
+                  public void stopMediaNotification() {
+                      mContext.stopMediaNotification();
+                  }
+
+                  @JavascriptInterface
+                  public void startForegroundTask(String taskType, String title, String message) {
+                      mContext.startForegroundTask(taskType, title, message);
+                  }
+
+                  @JavascriptInterface
+                  public void stopForegroundTask() {
+                      mContext.stopForegroundTask();
+                  }
+
+                  @JavascriptInterface
+                  public void cancelNotification(int id) {
+                      mContext.cancelNotification(id);
+                  }
+
+                  @JavascriptInterface
+                  public void cancelAllNotifications() {
+                      mContext.cancelAllNotifications();
+                  }
+
+                  @JavascriptInterface
+                  public void saveBase64File(String base64Data, String mimeType, String fileName) {
+                      mContext.saveBase64File(base64Data, mimeType, fileName);
+                  }
+
+                  @JavascriptInterface
+                  public void startNativeDownload(String urlString, String fileName) {
+                      mContext.startNativeDownload(urlString, fileName);
+                  }
               }
 
               public static class NotificationReceiver extends android.content.BroadcastReceiver {
@@ -1254,11 +1283,11 @@ jobs:
                       NotificationManager manager = (NotificationManager) context.getSystemService(android.content.Context.NOTIFICATION_SERVICE);
                       if (manager == null) return;
 
-                      Notification.Builder builder;
+                      NotificationCompat.Builder builder;
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                          builder = new Notification.Builder(context, "default");
+                          builder = new NotificationCompat.Builder(context, "default");
                       } else {
-                          builder = new Notification.Builder(context);
+                          builder = new NotificationCompat.Builder(context);
                       }
 
                       Intent appIntent = new Intent(context, MainActivity.class);
@@ -1289,40 +1318,71 @@ jobs:
                   @Override
                   public int onStartCommand(Intent intent, int flags, int startId) {
                       if (intent == null) return START_NOT_STICKY;
-                      String trackName = intent.getStringExtra("trackName");
-                      String artistName = intent.getStringExtra("artistName");
-                      boolean isPlaying = intent.getBooleanExtra("isPlaying", true);
+                      
+                      String taskType = intent.getStringExtra("task_type");
+                      if (taskType == null) taskType = "media";
 
-                      Notification.Builder builder;
+                      NotificationCompat.Builder builder;
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                          builder = new Notification.Builder(this, "media_channel");
+                          builder = new NotificationCompat.Builder(this, "foreground_tasks");
                       } else {
-                          builder = new Notification.Builder(this);
+                          builder = new NotificationCompat.Builder(this);
                       }
+
+                      builder.setSmallIcon(getApplicationInfo().icon)
+                              .setOngoing(true)
+                              .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
                       Intent notificationIntent = new Intent(this, MainActivity.class);
                       android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(this, 0, notificationIntent, android.app.PendingIntent.FLAG_IMMUTABLE);
+                      builder.setContentIntent(pendingIntent);
 
-                      builder.setContentTitle(trackName != null ? trackName : "No Audio Playing")
-                              .setContentText(artistName != null ? artistName : "Unknown Track")
-                              .setSmallIcon(getApplicationInfo().icon)
-                              .setContentIntent(pendingIntent)
-                              .setVisibility(Notification.VISIBILITY_PUBLIC);
+                      if (taskType.equals("media")) {
+                          String trackName = intent.getStringExtra("trackName");
+                          String artistName = intent.getStringExtra("artistName");
+                          boolean isPlaying = intent.getBooleanExtra("isPlaying", true);
 
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                          builder.setStyle(new Notification.MediaStyle()
-                                  .setMediaSession(mMediaSession.getSessionToken()));
+                          builder.setContentTitle(trackName != null ? trackName : "No Audio Playing")
+                                  .setContentText(artistName != null ? artistName : "Unknown Track")
+                                  .setChannelId("media_channel");
 
-                          Intent playIntent = new Intent(this, MainActivity.class).putExtra("action", "toggle_play");
-                          android.app.PendingIntent pPlay = android.app.PendingIntent.getActivity(this, 1, playIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                              builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
+                                      .setMediaSession(android.support.v4.media.session.MediaSessionCompat.Token.fromToken(mMediaSession.getSessionToken())));
 
-                          if (isPlaying) {
-                              builder.addAction(new Notification.Action.Builder(
-                                      android.graphics.drawable.Icon.createWithResource(this, android.R.drawable.ic_media_pause), "Pause", pPlay).build());
-                          } else {
-                              builder.addAction(new Notification.Action.Builder(
-                                      android.graphics.drawable.Icon.createWithResource(this, android.R.drawable.ic_media_play), "Play", pPlay).build());
+                              Intent playIntent = new Intent(this, MainActivity.class).putExtra("action", "toggle_play");
+                              android.app.PendingIntent pPlay = android.app.PendingIntent.getActivity(this, 1, playIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                              if (isPlaying) {
+                                  builder.addAction(android.R.drawable.ic_media_pause, "Pause", pPlay);
+                              } else {
+                                  builder.addAction(android.R.drawable.ic_media_play, "Play", pPlay);
+                              }
                           }
+                      } else if (taskType.equals("recording")) {
+                          String title = intent.getStringExtra("title");
+                          String message = intent.getStringExtra("message");
+                          builder.setContentTitle(title != null ? title : "Audio Recording Active")
+                                  .setContentText(message != null ? message : "Recording live audio in background...")
+                                  .setSmallIcon(android.R.drawable.presence_video_busy);
+                      } else if (taskType.equals("download")) {
+                          String title = intent.getStringExtra("title");
+                          String message = intent.getStringExtra("message");
+                          builder.setContentTitle(title != null ? title : "File Download Service")
+                                  .setContentText(message != null ? message : "Downloading system files...")
+                                  .setSmallIcon(android.R.drawable.stat_sys_download);
+                      } else if (taskType.equals("upload")) {
+                          String title = intent.getStringExtra("title");
+                          String message = intent.getStringExtra("message");
+                          builder.setContentTitle(title != null ? title : "Upload Service Active")
+                                  .setContentText(message != null ? message : "Uploading data package to cloud server...")
+                                  .setSmallIcon(android.R.drawable.stat_sys_upload);
+                      } else if (taskType.equals("background_task")) {
+                          String title = intent.getStringExtra("title");
+                          String message = intent.getStringExtra("message");
+                          builder.setContentTitle(title != null ? title : "Background Task Running")
+                                  .setContentText(message != null ? message : "Processing synchronized database pipelines...")
+                                  .setSmallIcon(android.R.drawable.stat_notify_sync);
                       }
 
                       startForeground(2002, builder.build());
