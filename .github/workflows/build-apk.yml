@@ -213,7 +213,7 @@ jobs:
           with open("app/src/main/res/values/styles.xml", "w") as f:
               f.write(styles_xml.strip())
 
-          # Write activity_splash.xml (Dynamic Splash lox/fallback launcher asset config)
+          # Write activity_splash.xml (Dynamic Splash icon or fallback launcher asset config)
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
           activity_splash_xml = f"""<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -277,11 +277,18 @@ jobs:
           with open("app/src/main/res/layout/activity_main.xml", "w") as f:
               f.write(activity_main_xml.strip())
 
-          # Handle Permissions
+          # Handle Permissions (Including Modern storage access framework permissions)
           camera_permission_manifest = '<uses-permission android:name="android.permission.CAMERA" />' if camera_enabled else ""
           audio_permission_manifest = '<uses-permission android:name="android.permission.RECORD_AUDIO" />\n<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' if microphone_enabled else ""
           notification_permission_manifest = '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' if notifications_enabled else ""
           
+          storage_permission_manifest = ""
+          if local_storage_enabled:
+              storage_permission_manifest = """
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+              <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+              """
+
           # Rotation preference mapping
           orientation_mode = "unspecified"
           if screen_rotation == "portrait":
@@ -297,6 +304,7 @@ jobs:
               {camera_permission_manifest}
               {audio_permission_manifest}
               {notification_permission_manifest}
+              {storage_permission_manifest}
               
               <application
                   android:allowBackup="true"
@@ -357,7 +365,7 @@ jobs:
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
 
-          # Generate MainActivity.java with native web implementations (Safe Exception handlers on Permissions)
+          # Generate MainActivity.java (Upgraded for Storage Access Framework & Immersive back press exit dialog)
           swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
           swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
           progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
@@ -443,6 +451,8 @@ jobs:
               permission_manager_block += 'permissions.add(Manifest.permission.CAMERA);\n'
           if microphone_enabled:
               permission_manager_block += 'permissions.add(Manifest.permission.RECORD_AUDIO);\n'
+          if local_storage_enabled:
+              permission_manager_block += 'permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);\n'
 
           permission_manager_block += """
           if (!permissions.isEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -468,10 +478,13 @@ jobs:
           main_activity_java = f"""package com.example.runner;
           import android.Manifest;
           import androidx.appcompat.app.AppCompatActivity;
+          import android.app.Activity;
           import android.app.DownloadManager;
           import android.app.NotificationChannel;
           import android.app.NotificationManager;
           import android.content.pm.PackageManager;
+          import android.content.ClipData;
+          import android.content.Intent;
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
@@ -484,6 +497,7 @@ jobs:
           import android.webkit.DownloadListener;
           import android.webkit.PermissionRequest;
           import android.webkit.URLUtil;
+          import android.webkit.ValueCallback;
           import android.webkit.WebChromeClient;
           import android.webkit.WebSettings;
           import android.webkit.WebView;
@@ -495,6 +509,8 @@ jobs:
 
           public class MainActivity extends AppCompatActivity {{
               private WebView mWebView;
+              private ValueCallback<Uri[]> mUploadMessage;
+              private final static int FILECHOOSER_RESULTCODE = 1;
               {swipe_declaration_block}
               {progress_declaration_block}
 
@@ -542,6 +558,26 @@ jobs:
                           super.onProgressChanged(view, newProgress);
                           {progress_update_block}
                       }}
+                      @Override
+                      public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {{
+                          if (mUploadMessage != null) {{
+                              mUploadMessage.onReceiveValue(null);
+                          }}
+                          mUploadMessage = filePathCallback;
+                          Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                          intent.addCategory(Intent.CATEGORY_OPENABLE);
+                          intent.setType("*/*");
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {{
+                              intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                          }}
+                          try {{
+                              startActivityForResult(Intent.createChooser(intent, "Select File"), FILECHOOSER_RESULTCODE);
+                          }} catch (Exception e) {{
+                              mUploadMessage = null;
+                              return false;
+                          }}
+                          return true;
+                      }}
                   }});
 
                   mWebView.setBackgroundColor(0);
@@ -550,12 +586,68 @@ jobs:
               }}
 
               @Override
-              public void onBackPressed() {{
-                  if (mWebView.canGoBack()) {{
-                      mWebView.goBack();
-                  }} else {{
-                      super.onBackPressed();
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {{
+                  if (requestCode == FILECHOOSER_RESULTCODE) {{
+                      if (mUploadMessage == null) return;
+                      Uri[] results = null;
+                      if (resultCode == Activity.RESULT_OK) {{
+                          if (data != null) {{
+                              String dataString = data.getDataString();
+                              ClipData clipData = data.getClipData();
+                              if (clipData != null) {{
+                                  results = new Uri[clipData.getItemCount()];
+                                  for (int i = 0; i < clipData.getItemCount(); i++) {{
+                                      ClipData.Item item = clipData.getItemAt(i);
+                                      results[i] = item.getUri();
+                                  }}
+                              }}
+                              if (dataString != null) {{
+                                  results = new Uri[]{{Uri.parse(dataString)}};
+                              }}
+                          }}
+                      }}
+                      mUploadMessage.onReceiveValue(results);
+                      mUploadMessage = null;
                   }}
+              }}
+
+              @Override
+              public void onBackPressed() {{
+                  mWebView.evaluateJavascript("javascript:if(window.onBackPressed){window.onBackPressed();}else{'default';}", new ValueCallback<String>() {{
+                      @Override
+                      public void onReceiveValue(String value) {{
+                          if (value == null || value.equals("\\"default\\"") || value.equals("null") || value.equals("false")) {{
+                              if (mWebView.canGoBack()) {{
+                                  mWebView.goBack();
+                              }} else {{
+                                  showExitDialog();
+                              }}
+                          }}
+                      }}
+                  }});
+              }}
+
+              private void showExitDialog() {{
+                  androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+                  builder.setTitle("Exit Application");
+                  builder.setMessage("Are you sure you want to exit?");
+                  builder.setPositiveButton("Exit", new android.content.DialogInterface.OnClickListener() {{
+                      @Override
+                      public void onClick(android.content.DialogInterface dialog, int which) {{
+                          finish();
+                      }}
+                  }});
+                  builder.setNegativeButton("Cancel", new android.content.DialogInterface.OnClickListener() {{
+                      @Override
+                      public void onClick(android.content.DialogInterface dialog, int which) {{
+                          dialog.dismiss();
+                      }}
+                  }});
+                  androidx.appcompat.app.AlertDialog dialog = builder.create();
+                  dialog.show();
+                  int colorPrimary = getResources().getColor(R.color.colorPrimary);
+                  dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(colorPrimary);
+                  dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
               }}
           }}
           """
@@ -633,10 +725,15 @@ jobs:
         run: |
           ./gradlew :app:assembleDebug
 
-      - name: Package APK into ZIP
+      - name: Package APK into ZIP and Rename
         run: |
+          CLEANED_NAME=$(echo "${APP_NAME}" | tr -cd '[:alnum:]_')
+          APK_NAME="${CLEANED_NAME}_v${VERSION_NAME}.apk"
+          ZIP_NAME="${CLEANED_NAME}_v${VERSION_NAME}_APK.zip"
+          
           cd app/build/outputs/apk/debug/
-          zip -r app-debug.zip app-debug.apk
+          mv app-debug.apk $APK_NAME
+          zip -r $ZIP_NAME $APK_NAME
 
       - name: Generate Unique Release Tag
         id: tag_gen
@@ -655,8 +752,8 @@ jobs:
             - **Package ID:** `${{ env.PACKAGE_ID }}`
             - **Build ID:** `${{ github.run_number }}`
           files: |
-            app/build/outputs/apk/debug/app-debug.apk
-            app/build/outputs/apk/debug/app-debug.zip
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/debug/*.zip
           draft: false
           prerelease: false
         env:
