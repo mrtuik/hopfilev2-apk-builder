@@ -221,7 +221,7 @@ jobs:
 
           # Write activity_splash.xml
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
-          activity_splash_xml_template = """xml version="1.0" encoding="utf-8"?>
+          activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
@@ -385,7 +385,7 @@ jobs:
           with open("app/src/main/java/com/example/runner/SplashActivity.java", "w") as f:
               f.write(splash_activity_java.strip())
 
-          # Generate MainActivity.java with Public Static JavascriptInterface (Prevents JNI mapping errors)
+          # Generate MainActivity.java
           swipe_import_block = "import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;" if swipe_refresh_enabled else ""
           swipe_declaration_block = "private SwipeRefreshLayout mSwipeRefresh;" if swipe_refresh_enabled else ""
           progress_declaration_block = "private ProgressBar mProgress;" if loading_ui_enabled else ""
@@ -495,6 +495,13 @@ jobs:
                   requestPermissions(remaining.toArray(new String[0]), 101);
               }
           }
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_HIGH);
+              NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+              if (manager != null) {
+                  manager.createNotificationChannel(channel);
+              }
+          }
           """
 
           main_activity_java_template = """package com.example.runner;
@@ -531,11 +538,7 @@ jobs:
           import android.webkit.WebViewClient;
           import android.widget.ProgressBar;
           import android.widget.Toast;
-
-          import androidx.appcompat.app.AppCompatActivity;
-          import androidx.core.app.NotificationCompat;
           import androidx.core.content.ContextCompat;
-
           import java.io.File;
           import java.io.FileOutputStream;
           import java.io.OutputStream;
@@ -554,18 +557,9 @@ jobs:
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
 
-                  // Setup High Importance Notification Channel on start (Ensures notifications show on Android 8+)
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      NotificationChannel channel = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_HIGH);
-                      NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                      if (manager != null) {
-                          manager.createNotificationChannel(channel);
-                      }
-                  }
-
                   mWebView = findViewById(R.id.webview);
                   
-                  // Setup clean Static JavascriptInterface Bridge to catch Web Notification triggers & local binary writers
+                  // Setup clean JavascriptInterface Bridge to catch Web Notification triggers & local binary writers
                   mWebView.addJavascriptInterface(new WebAppInterface(this), "AndroidInterface");
                   
                   __PROGRESS_INIT__
@@ -699,36 +693,30 @@ jobs:
                   dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
               }
 
-              // Upgraded Native JavascriptInterface Bridge Class to Public Static to avoid inner class registration crashes
-              public static class WebAppInterface {
-                  private MainActivity mActivity;
-
-                  public WebAppInterface(MainActivity activity) {
-                      this.mActivity = activity;
-                  }
-
+              // Native JavascriptInterface Bridge Class
+              public class WebAppInterface {
                   @android.webkit.JavascriptInterface
                   public void showNotification(final String title, final String message) {
-                      mActivity.runOnUiThread(new Runnable() {
+                      runOnUiThread(new Runnable() {
                           @Override
                           public void run() {
-                              mActivity.showNativeNotification(title, message);
+                              showNativeNotification(title, message);
                           }
                       });
                   }
 
                   @android.webkit.JavascriptInterface
                   public void saveAudioFile(final String base64Data, final String fileName) {
-                      mActivity.runOnUiThread(new Runnable() {
+                      runOnUiThread(new Runnable() {
                           @Override
                           public void run() {
-                              mActivity.saveBase64ToDownloads(base64Data, fileName);
+                              saveBase64ToDownloads(base64Data, fileName);
                           }
                       });
                   }
               }
 
-              void showNativeNotification(String title, String message) {
+              private void showNativeNotification(String title, String message) {
                   Intent intent = new Intent(this, MainActivity.class);
                   intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                   PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
@@ -747,7 +735,7 @@ jobs:
                   }
               }
 
-              void saveBase64ToDownloads(String base64Data, String fileName) {
+              private void saveBase64ToDownloads(String base64Data, String fileName) {
                   try {
                       if (base64Data.contains(",")) {
                           base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
