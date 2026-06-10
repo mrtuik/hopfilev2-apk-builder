@@ -587,6 +587,7 @@ jobs:
 
               @Override
               protected void onActivityResult(int requestCode, int resultCode, Intent data) {{
+                  super.onActivityResult(requestCode, resultCode, data);
                   if (requestCode == FILECHOOSER_RESULTCODE) {{
                       if (mUploadMessage == null) return;
                       Uri[] results = null;
@@ -645,7 +646,7 @@ jobs:
                   }});
                   androidx.appcompat.app.AlertDialog dialog = builder.create();
                   dialog.show();
-                  int colorPrimary = getResources().getColor(R.color.colorPrimary);
+                  int colorPrimary = androidx.core.content.ContextCompat.getColor(this, R.color.colorPrimary);
                   dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setTextColor(colorPrimary);
                   dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
               }}
