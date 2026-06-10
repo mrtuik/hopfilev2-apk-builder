@@ -437,6 +437,7 @@ jobs:
           import android.os.IBinder;
           import android.app.Notification;
           import android.os.Build;
+          import com.example.runner.R;
 
           public class WebRunnerService extends Service {
               @Override
@@ -473,6 +474,7 @@ jobs:
           import android.app.NotificationManager;
           import android.app.Notification;
           import android.os.Build;
+          import com.example.runner.R;
 
           public class NotificationReceiver extends BroadcastReceiver {
               @Override
@@ -687,6 +689,7 @@ jobs:
           import android.webkit.JavascriptInterface;
           import org.json.JSONObject;
           import org.json.JSONArray;
+          import com.example.runner.R;
           import java.util.ArrayList;
           __SWIPE_IMPORT__
 
@@ -967,6 +970,7 @@ jobs:
 
                               if (!bigText.isEmpty()) {
                                   Notification.BigTextStyle bigStyle = new Notification.BigTextStyle();
+                                  bigStyle.bigText(bigStyle.toString());
                                   bigStyle.bigText(bigText);
                                   builder.setStyle(bigStyle);
                               }
