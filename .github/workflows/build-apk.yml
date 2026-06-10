@@ -97,6 +97,9 @@ jobs:
 
       - name: Generate Native Android Code from app_config.json
         run: |
+          # Safe python pip installation of Pillow
+          python3 -m pip install pillow
+          
           cat << 'EOF' > build_assets.py
           import json
           import os
@@ -612,7 +615,7 @@ jobs:
                   print(f"Error resizing custom splash icon: {e}")
           EOF
           
-          python build_assets.py
+          python3 build_assets.py
 
       - name: Write strings.xml resource values
         run: |
