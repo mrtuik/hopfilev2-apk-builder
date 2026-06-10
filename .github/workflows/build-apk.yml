@@ -262,6 +262,209 @@ jobs:
           with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
               f.write(custom_notification_xml.strip())
 
+          # Write custom_media_collapsed.xml (Compact player card)
+          custom_media_collapsed_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="64dp"
+              android:background="#FFFFFF"
+              android:padding="8dp">
+              <ImageView
+                  android:id="@+id/media_album_art"
+                  android:layout_width="48dp"
+                  android:layout_height="48dp"
+                  android:src="@mipmap/ic_launcher"
+                  android:layout_alignParentLeft="true"
+                  android:layout_centerVertical="true"
+                  android:scaleType="centerCrop"/>
+              <LinearLayout
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:layout_toRightOf="@id/media_album_art"
+                  android:layout_toLeftOf="@+id/media_controls_layout"
+                  android:layout_centerVertical="true"
+                  android:layout_marginLeft="10dp"
+                  android:layout_marginRight="10dp">
+                  <TextView
+                      android:id="@+id/media_track_title"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Track Title"
+                      android:textColor="#0F172A"
+                      android:textSize="14sp"
+                      android:textStyle="bold"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+                  <TextView
+                      android:id="@+id/media_artist_name"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Artist"
+                      android:textColor="#64748B"
+                      android:textSize="11sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+              </LinearLayout>
+              <LinearLayout
+                  android:id="@+id/media_controls_layout"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_alignParentRight="true"
+                  android:layout_centerVertical="true"
+                  android:gravity="center">
+                  <ImageButton
+                      android:id="@+id/btn_prev"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@android:drawable/ic_media_previous"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Previous"/>
+                  <ImageButton
+                      android:id="@+id/btn_play_pause"
+                      android:layout_width="36dp"
+                      android:layout_height="36dp"
+                      android:src="@android:drawable/ic_media_pause"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Play/Pause"
+                      android:layout_marginLeft="6dp"
+                      android:layout_marginRight="6dp"/>
+                  <ImageButton
+                      android:id="@+id/btn_next"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@android:drawable/ic_media_next"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Next"/>
+              </LinearLayout>
+          </RelativeLayout>
+          """
+          with open("app/src/main/res/layout/custom_media_collapsed.xml", "w") as f:
+              f.write(custom_media_collapsed_xml.strip())
+
+          # Write custom_media_expanded.xml (Premium card with progressbar timeline)
+          custom_media_expanded_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="128dp"
+              android:background="#FFFFFF"
+              android:padding="12dp">
+              <ImageView
+                  android:id="@+id/media_album_art_large"
+                  android:layout_width="64dp"
+                  android:layout_height="64dp"
+                  android:src="@mipmap/ic_launcher"
+                  android:layout_alignParentLeft="true"
+                  android:layout_alignParentTop="true"
+                  android:scaleType="centerCrop"/>
+              <LinearLayout
+                  android:id="@+id/details_layout"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:layout_toRightOf="@id/media_album_art_large"
+                  android:layout_marginLeft="14dp"
+                  android:layout_alignParentTop="true"
+                  android:layout_toLeftOf="@+id/btn_stop">
+                  <TextView
+                      android:id="@+id/media_track_title_large"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Track Title"
+                      android:textColor="#0F172A"
+                      android:textSize="15sp"
+                      android:textStyle="bold"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+                  <TextView
+                      android:id="@+id/media_artist_name_large"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Artist Name"
+                      android:textColor="#64748B"
+                      android:textSize="12sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+              </LinearLayout>
+              <ImageButton
+                  android:id="@+id/btn_stop"
+                  android:layout_width="28dp"
+                  android:layout_height="28dp"
+                  android:src="@android:drawable/ic_menu_close_clear_cancel"
+                  android:background="?android:attr/selectableItemBackgroundBorderless"
+                  android:layout_alignParentRight="true"
+                  android:layout_alignParentTop="true"/>
+              <LinearLayout
+                  android:id="@+id/timeline_layout"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_below="@id/media_album_art_large"
+                  android:layout_marginTop="10dp"
+                  android:gravity="center_vertical">
+                  <TextView
+                      android:id="@+id/txt_current_time"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0:00"
+                      android:textColor="#64748B"
+                      android:textSize="10sp"/>
+                  <ProgressBar
+                      android:id="@+id/custom_media_progress"
+                      style="?android:attr/progressBarStyleHorizontal"
+                      android:layout_width="0dp"
+                      android:layout_height="6dp"
+                      android:layout_weight="1"
+                      android:layout_marginLeft="8dp"
+                      android:layout_marginRight="8dp"
+                      android:max="100"
+                      android:progress="0"/>
+                  <TextView
+                      android:id="@+id/txt_total_duration"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0:00"
+                      android:textColor="#64748B"
+                      android:textSize="10sp"/>
+              </LinearLayout>
+              <LinearLayout
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_below="@id/timeline_layout"
+                  android:layout_centerHorizontal="true"
+                  android:layout_marginTop="8dp"
+                  android:gravity="center">
+                  <ImageButton
+                      android:id="@+id/btn_prev_large"
+                      android:layout_width="36dp"
+                      android:layout_height="36dp"
+                      android:src="@android:drawable/ic_media_previous"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Previous"/>
+                  <ImageButton
+                      android:id="@+id/btn_play_pause_large"
+                      android:layout_width="44dp"
+                      android:layout_height="44dp"
+                      android:src="@android:drawable/ic_media_pause"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Play/Pause"
+                      android:layout_marginLeft="14dp"
+                      android:layout_marginRight="14dp"/>
+                  <ImageButton
+                      android:id="@+id/btn_next_large"
+                      android:layout_width="36dp"
+                      android:layout_height="36dp"
+                      android:src="@android:drawable/ic_media_next"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Next"/>
+              </LinearLayout>
+          </RelativeLayout>
+          """
+          with open("app/src/main/res/layout/custom_media_expanded.xml", "w") as f:
+              f.write(custom_media_expanded_xml.strip())
+
           # Write activity_splash.xml
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
           activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
@@ -705,32 +908,39 @@ jobs:
                       NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                       if (manager == null) return;
 
+                      // Standard Channel
                       NotificationChannel defaultChan = new NotificationChannel("default", "App Channel", NotificationManager.IMPORTANCE_DEFAULT);
                       defaultChan.setDescription("Standard notifications for app activities.");
                       manager.createNotificationChannel(defaultChan);
 
+                      // Media Channel
                       NotificationChannel mediaChan = new NotificationChannel("media_channel", "Media Control", NotificationManager.IMPORTANCE_LOW);
                       mediaChan.setDescription("Controls and player configurations for active media playback.");
                       manager.createNotificationChannel(mediaChan);
 
+                      // Silent Channel
                       NotificationChannel silentChan = new NotificationChannel("silent_channel", "Silent Notifications", NotificationManager.IMPORTANCE_MIN);
                       silentChan.setDescription("Low importance notifications without sound.");
                       manager.createNotificationChannel(silentChan);
 
+                      // Heads-Up Channel
                       NotificationChannel highChan = new NotificationChannel("high_importance", "Urgent Updates", NotificationManager.IMPORTANCE_HIGH);
                       highChan.setDescription("Heads-up alert dialog style notifications.");
                       highChan.enableVibration(true);
                       manager.createNotificationChannel(highChan);
 
+                      // Progress Tracker Channel
                       NotificationChannel progressChan = new NotificationChannel("progress_channel", "Task Progress", NotificationManager.IMPORTANCE_LOW);
                       progressChan.setDescription("Shows file upload/download state trackers.");
                       manager.createNotificationChannel(progressChan);
 
+                      // Critical Channel for Call/Alarm
                       NotificationChannel criticalChan = new NotificationChannel("critical_channel", "Critical Reminders", NotificationManager.IMPORTANCE_HIGH);
                       criticalChan.setDescription("Alarms, phone calls, and critical action requests.");
                       criticalChan.enableVibration(true);
                       manager.createNotificationChannel(criticalChan);
 
+                      // Foreground Service Channel
                       NotificationChannel serviceChan = new NotificationChannel("foreground_tasks", "Background Services", NotificationManager.IMPORTANCE_DEFAULT);
                       serviceChan.setDescription("Foreground service status alerts.");
                       manager.createNotificationChannel(serviceChan);
@@ -1431,7 +1641,7 @@ jobs:
                               org.json.JSONArray lines = json.getJSONArray("inboxLines");
                               NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
                               for (int i = 0; i < lines.length(); i++) {
-                                  inboxStyle.addLine(lines.getString(i));
+                                  inboxStyle.addLine(json.getString(i));
                               }
                               builder.setStyle(inboxStyle);
                           }
@@ -1669,24 +1879,40 @@ jobs:
                       metadataBuilder.putBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART, albumArt);
                       mMediaSession.setMetadata(metadataBuilder.build());
 
-                      NotificationCompat.Builder builder;
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                          builder = new NotificationCompat.Builder(this, "media_channel");
-                      } else {
-                          builder = new NotificationCompat.Builder(this);
+                      android.widget.RemoteViews collapsedViews = new android.widget.RemoteViews(getPackageName(), R.layout.custom_media_collapsed);
+                      android.widget.RemoteViews expandedViews = new android.widget.RemoteViews(getPackageName(), R.layout.custom_media_expanded);
+
+                      collapsedViews.setTextViewText(R.id.media_track_title, trackName);
+                      collapsedViews.setTextViewText(R.id.media_artist_name, artistName);
+                      collapsedViews.setImageViewResource(R.id.media_album_art, getApplicationInfo().icon);
+
+                      expandedViews.setTextViewText(R.id.media_track_title_large, trackName);
+                      expandedViews.setTextViewText(R.id.media_artist_name_large, artistName);
+                      expandedViews.setImageViewResource(R.id.media_album_art_large, getApplicationInfo().icon);
+
+                      int playPauseIcon = isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play;
+                      collapsedViews.setImageViewResource(R.id.btn_play_pause, playPauseIcon);
+                      expandedViews.setImageViewResource(R.id.btn_play_pause_large, playPauseIcon);
+
+                      int progressPercent = 0;
+                      if (durationMs > 0) {
+                          progressPercent = (int) (currentTimeMs * 100 / durationMs);
                       }
-
-                      builder.setSmallIcon(getApplicationInfo().icon)
-                              .setContentTitle(trackName)
-                              .setContentText(artistName)
-                              .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
-                              .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                              .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-                              .setOngoing(isPlaying);
-
-                      Intent notificationIntent = new Intent(this, MainActivity.class);
-                      android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(this, 0, notificationIntent, android.app.PendingIntent.FLAG_IMMUTABLE);
-                      builder.setContentIntent(pendingIntent);
+                      expandedViews.setProgressBar(R.id.custom_media_progress, 100, progressPercent, false);
+                      
+                      long currentSecs = currentTimeMs / 1000;
+                      long totalSecs = durationMs / 1000;
+                      
+                      long currentMins = currentSecs / 60;
+                      long currentLeftSecs = currentSecs % 60;
+                      long totalMins = totalSecs / 60;
+                      long totalLeftSecs = totalSecs % 60;
+                      
+                      String currentTimeStr = currentMins + ":" + (currentLeftSecs < 10 ? "0" : "") + currentLeftSecs;
+                      String totalTimeStr = totalMins + ":" + (totalLeftSecs < 10 ? "0" : "") + totalLeftSecs;
+                      
+                      expandedViews.setTextViewText(R.id.txt_current_time, currentTimeStr);
+                      expandedViews.setTextViewText(R.id.txt_total_duration, totalTimeStr);
 
                       Intent prevIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "PREV_ACTION");
                       android.app.PendingIntent pPrev = android.app.PendingIntent.getActivity(this, 10, prevIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
@@ -1700,20 +1926,29 @@ jobs:
                       Intent stopIntent = new Intent(this, MainActivity.class).putExtra("notification_action", "STOP_ACTION");
                       android.app.PendingIntent pStop = android.app.PendingIntent.getActivity(this, 13, stopIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
 
-                      builder.addAction(android.R.drawable.ic_media_previous, "Previous", pPrev);
-                      if (isPlaying) {
-                          builder.addAction(android.R.drawable.ic_media_pause, "Pause", pPlay);
-                      } else {
-                          builder.addAction(android.R.drawable.ic_media_play, "Play", pPlay);
-                      }
-                      builder.addAction(android.R.drawable.ic_media_next, "Next", pNext);
-                      builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", pStop);
+                      collapsedViews.setOnClickPendingIntent(R.id.btn_prev, pPrev);
+                      collapsedViews.setOnClickPendingIntent(R.id.btn_play_pause, pPlay);
+                      collapsedViews.setOnClickPendingIntent(R.id.btn_next, pNext);
 
-                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                          builder.setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                                  .setShowActionsInCompactView(0, 1, 2)
-                                  .setMediaSession(android.support.v4.media.session.MediaSessionCompat.Token.fromToken(mMediaSession.getSessionToken())));
+                      expandedViews.setOnClickPendingIntent(R.id.btn_prev_large, pPrev);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_play_pause_large, pPlay);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_next_large, pNext);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_stop, pStop);
+
+                      NotificationCompat.Builder builder;
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          builder = new NotificationCompat.Builder(this, "media_channel");
+                      } else {
+                          builder = new NotificationCompat.Builder(this);
                       }
+
+                      builder.setSmallIcon(getApplicationInfo().icon)
+                              .setCustomContentView(collapsedViews)
+                              .setCustomBigContentView(expandedViews)
+                              .setOngoing(isPlaying)
+                              .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                              .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                              .setCategory(NotificationCompat.CATEGORY_TRANSPORT);
 
                       if (isPlaying) {
                           startForeground(2002, builder.build());
