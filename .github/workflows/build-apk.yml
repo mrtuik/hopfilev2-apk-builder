@@ -263,6 +263,69 @@ jobs:
           with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
               f.write(custom_notification_xml.strip())
 
+          # Generate Custom Premium Vector Icons for notification buttons
+          os.makedirs("app/src/main/res/drawable", exist_ok=True)
+          
+          ic_prev_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M6,18V6h2v12H6z M9.5,12l8.5,6V6L9.5,12z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_prev.xml", "w") as f:
+              f.write(ic_prev_xml.strip())
+
+          ic_play_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M8,5v14l11-7L8,5z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_play.xml", "w") as f:
+              f.write(ic_play_xml.strip())
+
+          ic_pause_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M6,19h4V5H6V19z M14,5v14h4V5H14z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_pause.xml", "w") as f:
+              f.write(ic_pause_xml.strip())
+
+          ic_next_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M6,18l8.5-6L6,6V18z M16,6v12h2V6H16z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_next.xml", "w") as f:
+              f.write(ic_next_xml.strip())
+
+          ic_stop_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFF"
+                  android:pathData="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_stop.xml", "w") as f:
+              f.write(ic_stop_xml.strip())
+
           # Write activity_splash.xml
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
           activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
@@ -1738,35 +1801,43 @@ jobs:
                       
                       android.graphics.Paint paint = new android.graphics.Paint();
                       paint.setAntiAlias(true);
+                      
+                      // 1. Sleek premium solid background gradient
                       android.graphics.LinearGradient gradient = new android.graphics.LinearGradient(
                           0, 0, size, size,
-                          new int[]{0xFF1E293B, 0xFF0F172A, 0xFF020617},
+                          new int[]{0xFF111827, 0xFF1F2937, 0xFF111827},
                           null,
                           android.graphics.Shader.TileMode.CLAMP
                       );
                       paint.setShader(gradient);
-                      canvas.drawRect(0, 0, size, size, paint);
+                      canvas.drawRoundRect(0, 0, size, size, 24, 24, paint);
                       
+                      // 2. Modern overlapping semi-transparent circles instead of thin borders/outlines
                       paint.setShader(null);
-                      paint.setStyle(android.graphics.Paint.Style.STROKE);
-                      paint.setColor(0xFF6366F1);
-                      paint.setStrokeWidth(6.0f);
-                      canvas.drawCircle(size / 2, size / 2, (size / 2) - 20, paint);
-                      
                       paint.setStyle(android.graphics.Paint.Style.FILL);
-                      paint.setColor(0xFFF8FAFC);
-                      paint.setTextSize(96.0f);
+                      paint.setColor(0x0AFFFFFF);
+                      canvas.drawCircle(size / 2, size / 2, 100, paint);
+                      paint.setColor(0x10FFFFFF);
+                      canvas.drawCircle(size / 2, size / 2, 70, paint);
+                      
+                      // 3. Glowing primary color code initial character
+                      paint.setColor(0xFF818CF8);
+                      paint.setTextSize(100.0f);
                       paint.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
                       paint.setTextAlign(android.graphics.Paint.Align.CENTER);
                       
-                      String letter = "♪";
+                      String symbol = "♪";
                       if (trackName != null && !trackName.isEmpty()) {
-                          letter = trackName.substring(0, 1).toUpperCase();
+                          symbol = trackName.substring(0, 1).toUpperCase();
                       }
                       
                       android.graphics.Paint.FontMetrics fm = paint.getFontMetrics();
                       float yOffset = (fm.descent + fm.ascent) / 2;
-                      canvas.drawText(letter, size / 2, (size / 2) - yOffset, paint);
+                      
+                      // Subtle drop shadow under the character
+                      paint.setShadowLayer(8f, 0f, 4f, 0xAA000000);
+                      canvas.drawText(symbol, size / 2, (size / 2) - yOffset, paint);
+                      paint.clearShadowLayer();
                       
                       return bitmap;
                   }
@@ -1826,10 +1897,10 @@ jobs:
                               .setColorized(true)
                               .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                               .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-                              .addAction(android.R.drawable.ic_media_previous, "Previous", pPrev)
-                              .addAction(isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play, isPlaying ? "Pause" : "Play", pPlay)
-                              .addAction(android.R.drawable.ic_media_next, "Next", pNext)
-                              .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", pStop)
+                              .addAction(R.drawable.ic_notification_prev, "Previous", pPrev)
+                              .addAction(isPlaying ? R.drawable.ic_notification_pause : R.drawable.ic_notification_play, isPlaying ? "Pause" : "Play", pPlay)
+                              .addAction(R.drawable.ic_notification_next, "Next", pNext)
+                              .addAction(R.drawable.ic_notification_stop, "Stop", pStop)
                               .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
                                       .setShowActionsInCompactView(0, 1, 2)
                                       .setMediaSession(mMediaSession.getSessionToken()));
