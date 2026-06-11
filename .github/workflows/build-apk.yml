@@ -263,7 +263,7 @@ jobs:
           with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
               f.write(custom_notification_xml.strip())
 
-          # Generate Custom Premium Vector Icons for notification buttons
+          # Generate Custom Theme-Aware Vector Icons for notification buttons
           os.makedirs("app/src/main/res/drawable", exist_ok=True)
           
           ic_prev_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -272,7 +272,7 @@ jobs:
               android:viewportWidth="24"
               android:viewportHeight="24">
               <path
-                  android:fillColor="#FFFFFF"
+                  android:fillColor="?android:attr/textColorPrimary"
                   android:pathData="M6,18V6h2v12H6z M9.5,12l8.5,6V6L9.5,12z"/>
           </vector>"""
           with open("app/src/main/res/drawable/ic_notification_prev.xml", "w") as f:
@@ -284,7 +284,7 @@ jobs:
               android:viewportWidth="24"
               android:viewportHeight="24">
               <path
-                  android:fillColor="#FFFFFF"
+                  android:fillColor="?android:attr/textColorPrimary"
                   android:pathData="M8,5v14l11-7L8,5z"/>
           </vector>"""
           with open("app/src/main/res/drawable/ic_notification_play.xml", "w") as f:
@@ -296,7 +296,7 @@ jobs:
               android:viewportWidth="24"
               android:viewportHeight="24">
               <path
-                  android:fillColor="#FFFFFF"
+                  android:fillColor="?android:attr/textColorPrimary"
                   android:pathData="M6,19h4V5H6V19z M14,5v14h4V5H14z"/>
           </vector>"""
           with open("app/src/main/res/drawable/ic_notification_pause.xml", "w") as f:
@@ -308,7 +308,7 @@ jobs:
               android:viewportWidth="24"
               android:viewportHeight="24">
               <path
-                  android:fillColor="#FFFFFF"
+                  android:fillColor="?android:attr/textColorPrimary"
                   android:pathData="M6,18l8.5-6L6,6V18z M16,6v12h2V6H16z"/>
           </vector>"""
           with open("app/src/main/res/drawable/ic_notification_next.xml", "w") as f:
@@ -320,11 +320,37 @@ jobs:
               android:viewportWidth="24"
               android:viewportHeight="24">
               <path
-                  android:fillColor="#FFFFFF"
+                  android:fillColor="?android:attr/textColorPrimary"
                   android:pathData="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41z"/>
           </vector>"""
           with open("app/src/main/res/drawable/ic_notification_stop.xml", "w") as f:
               f.write(ic_stop_xml.strip())
+
+          # Generate Premium SVG Skip-Rewind (Backward 10s) vector drawable
+          ic_rewind_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="?android:attr/textColorPrimary"
+                  android:pathData="M11,18V6l-8.5,6L11,18z M11.5,12l8.5,6V6L11.5,12z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_rewind.xml", "w") as f:
+              f.write(ic_rewind_xml.strip())
+
+          # Generate Premium SVG Skip-Fast-Forward (Forward 10s) vector drawable
+          ic_forward_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="?android:attr/textColorPrimary"
+                  android:pathData="M13,6v12l8.5-6L13,6z M12.5,12l-8.5,6V6L12.5,12z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_fast_forward.xml", "w") as f:
+              f.write(ic_forward_xml.strip())
 
           # Generate Developer Vector Icon (Code symbol for "Tuik")
           ic_code_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -339,21 +365,24 @@ jobs:
           with open("app/src/main/res/drawable/ic_notification_code.xml", "w") as f:
               f.write(ic_code_xml.strip())
 
-          # Generate Ultra-Rounded Pill Shape Background for Developer Badge
+          # Generate Ultra-Rounded Background Capsule Shape for Developer Badge
           bg_tuik_badge_xml = """<?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#1D4ED8" />
-              <corners android:radius="24dp" />
+              <solid android:color="#232B3E" />
+              <corners android:radius="16dp" />
           </shape>"""
           with open("app/src/main/res/drawable/bg_tuik_badge.xml", "w") as f:
               f.write(bg_tuik_badge_xml.strip())
 
-          # Generate custom_media_collapsed.xml (Collapsed layout with adaptive colors, seekbar and Tuik badge)
+          # Generate custom_media_collapsed.xml (Collapsed layout with continuous seekbar and clickable Tuik badge)
           custom_media_collapsed_xml = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/notification_root"
               android:layout_width="match_parent"
               android:layout_height="80dp"
-              android:padding="8dp">
+              android:padding="8dp"
+              android:clickable="true"
+              android:focusable="true">
               <ImageView
                   android:id="@+id/media_album_art"
                   android:layout_width="52dp"
@@ -382,22 +411,14 @@ jobs:
                       android:textStyle="bold"
                       android:ellipsize="end"
                       android:singleLine="true"/>
-                  <TextView
-                      android:id="@+id/txt_collapsed_time"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="0:00 / 0:00"
-                      android:textColor="?android:attr/textColorSecondary"
-                      android:textSize="10sp"
-                      android:layout_marginTop="2dp"/>
                   <LinearLayout
                       android:id="@+id/tuik_badge"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:orientation="horizontal"
                       android:background="@drawable/bg_tuik_badge"
-                      android:paddingLeft="10dp"
-                      android:paddingRight="10dp"
+                      android:paddingLeft="8dp"
+                      android:paddingRight="8dp"
                       android:paddingTop="3dp"
                       android:paddingBottom="3dp"
                       android:layout_marginTop="4dp"
@@ -458,6 +479,8 @@ jobs:
                   android:layout_height="3dp"
                   android:layout_alignParentBottom="true"
                   android:progressDrawable="@android:drawable/progress_horizontal"
+                  android:progressTint="?android:attr/colorAccent"
+                  android:progressBackgroundTint="?android:attr/textColorSecondary"
                   android:max="100"
                   android:progress="0"/>
           </RelativeLayout>
@@ -465,12 +488,15 @@ jobs:
           with open("app/src/main/res/layout/custom_media_collapsed.xml", "w") as f:
               f.write(custom_media_collapsed_xml.strip())
 
-          # Generate custom_media_expanded.xml (Expanded layout with adaptive colors, timeline numbers and Tuik badge)
+          # Generate custom_media_expanded.xml (Expanded layout with timeline numbers and clickable Tuik badge)
           custom_media_expanded_xml = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/notification_root_large"
               android:layout_width="match_parent"
               android:layout_height="144dp"
-              android:padding="12dp">
+              android:padding="12dp"
+              android:clickable="true"
+              android:focusable="true">
               <ImageView
                   android:id="@+id/media_album_art_large"
                   android:layout_width="64dp"
@@ -503,8 +529,8 @@ jobs:
                       android:layout_height="wrap_content"
                       android:orientation="horizontal"
                       android:background="@drawable/bg_tuik_badge"
-                      android:paddingLeft="10dp"
-                      android:paddingRight="10dp"
+                      android:paddingLeft="8dp"
+                      android:paddingRight="8dp"
                       android:paddingTop="3dp"
                       android:paddingBottom="3dp"
                       android:layout_marginTop="4dp"
@@ -556,6 +582,8 @@ jobs:
                       android:layout_weight="1"
                       android:layout_marginLeft="8dp"
                       android:layout_marginRight="8dp"
+                      android:progressTint="?android:attr/colorAccent"
+                      android:progressBackgroundTint="?android:attr/textColorSecondary"
                       android:max="100"
                       android:progress="0"/>
                   <TextView
@@ -582,6 +610,14 @@ jobs:
                       android:background="?android:attr/selectableItemBackgroundBorderless"
                       android:contentDescription="Previous"/>
                   <ImageButton
+                      android:id="@+id/btn_rewind_large"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@drawable/ic_notification_rewind"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:layout_marginLeft="10dp"
+                      android:contentDescription="Rewind"/>
+                  <ImageButton
                       android:id="@+id/btn_play_pause_large"
                       android:layout_width="36dp"
                       android:layout_height="36dp"
@@ -590,6 +626,14 @@ jobs:
                       android:contentDescription="Play/Pause"
                       android:layout_marginLeft="14dp"
                       android:layout_marginRight="14dp"/>
+                  <ImageButton
+                      android:id="@+id/btn_fast_forward_large"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@drawable/ic_notification_fast_forward"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:layout_marginRight="10dp"
+                      android:contentDescription="Fast Forward"/>
                   <ImageButton
                       android:id="@+id/btn_next_large"
                       android:layout_width="32dp"
@@ -947,7 +991,7 @@ jobs:
                   @Override
                   public void run() {
                       if (mWebView != null) {
-                          mWebView.evaluateJavascript("javascript:(function(){ if(window.currentAudio) { var name = 'HopFile Player'; var el = document.getElementById('playerTrackName'); if(el) name = el.textContent; return window.currentAudio.currentTime + ',' + window.currentAudio.duration + ',' + window.currentAudio.paused + ',' + name; } return ''; })()", new ValueCallback<String>() {
+                          mWebView.evaluateJavascript("javascript:(function(){ var audio = window.currentAudio || (typeof currentAudio !== 'undefined' ? currentAudio : null); if(audio) { var name = 'HopFile Player'; var el = document.getElementById('playerTrackName'); if(el) name = el.textContent; return audio.currentTime + ',' + audio.duration + ',' + audio.paused + ',' + name; } return ''; })()", new ValueCallback<String>() {
                               @Override
                               public void onReceiveValue(String value) {
                                   if (value != null && !value.equals("null") && !value.isEmpty()) {
@@ -1662,63 +1706,17 @@ jobs:
                       public void run() {
                           if (mWebView != null) {
                               if ("PREV".equals(action)) {
-                                  mWebView.loadUrl("javascript:(function(){ " +
-                                      "if(window.onNotificationAction){ window.onNotificationAction('PREV_ACTION'); } " +
-                                      "else { " +
-                                      "    var buttons = Array.from(document.querySelectorAll('.action-btn[onclick*=\"playTrack\"]')); " +
-                                      "    if(buttons.length > 0){ " +
-                                      "        var activeNameEl = document.getElementById('playerTrackName'); " +
-                                      "        var activeName = activeNameEl ? activeNameEl.textContent.trim() : ''; " +
-                                      "        var activeIdx = -1; " +
-                                      "        var trackList = buttons.map(function(btn){ " +
-                                      "            var onClick = btn.getAttribute('onclick'); " +
-                                      "            var id = onClick.match(/playTrack\\\\(['\"]([^'\"]+)['\"]\\\\)/)[1]; " +
-                                      "            var nameEl = btn.closest('.track-item').querySelector('.track-name'); " +
-                                      "            var name = nameEl ? nameEl.textContent.trim() : ''; " +
-                                      "            return { id: id, name: name, btn: btn }; " +
-                                      "        }); " +
-                                      "        if(activeName){ " +
-                                      "            for(var i=0; i<trackList.length; i++){ " +
-                                      "                if(trackList[i].name === activeName){ activeIdx = i; break; } " +
-                                      "            } " +
-                                      "        } " +
-                                      "        if(activeIdx === -1) activeIdx = 0; " +
-                                      "        var prevIdx = (activeIdx - 1 + trackList.length) % trackList.length; " +
-                                      "        trackList[prevIdx].btn.click(); " +
-                                      "    } " +
-                                      "} " +
-                                      "})()");
+                                  mWebView.loadUrl("javascript:(function(){ if(window.onNotificationAction){ window.onNotificationAction('PREV_ACTION'); return; } var currentNameEl = document.getElementById('playerTrackName'); if(!currentNameEl) return; var currentName = currentNameEl.textContent; var items = document.querySelectorAll('.track-item'); if(items.length <= 1) return; var currentIndex = -1; for(var i=0; i<items.length; i++){ var nameEl = items[i].querySelector('.track-name'); if(nameEl && nameEl.textContent === currentName){ currentIndex = i; break; } } if(currentIndex !== -1){ var targetIndex = (currentIndex - 1 + items.length) % items.length; var playBtn = items[targetIndex].querySelector('.action-btn[onclick^=\\"playTrack\\"]'); if(playBtn) playBtn.click(); } })()");
                               } else if ("PLAY_PAUSE".equals(action) || "TOGGLE_PLAY_ACTION".equals(action)) {
                                   mWebView.loadUrl("javascript:var btn = document.getElementById('playerPlayPauseBtn'); if(btn) btn.click();");
                               } else if ("NEXT".equals(action)) {
-                                  mWebView.loadUrl("javascript:(function(){ " +
-                                      "if(window.onNotificationAction){ window.onNotificationAction('NEXT_ACTION'); } " +
-                                      "else { " +
-                                      "    var buttons = Array.from(document.querySelectorAll('.action-btn[onclick*=\"playTrack\"]')); " +
-                                      "    if(buttons.length > 0){ " +
-                                      "        var activeNameEl = document.getElementById('playerTrackName'); " +
-                                      "        var activeName = activeNameEl ? activeNameEl.textContent.trim() : ''; " +
-                                      "        var activeIdx = -1; " +
-                                      "        var trackList = buttons.map(function(btn){ " +
-                                      "            var onClick = btn.getAttribute('onclick'); " +
-                                      "            var id = onClick.match(/playTrack\\\\(['\"]([^'\"]+)['\"]\\\\)/)[1]; " +
-                                      "            var nameEl = btn.closest('.track-item').querySelector('.track-name'); " +
-                                      "            var name = nameEl ? nameEl.textContent.trim() : ''; " +
-                                      "            return { id: id, name: name, btn: btn }; " +
-                                      "        }); " +
-                                      "        if(activeName){ " +
-                                      "            for(var i=0; i<trackList.length; i++){ " +
-                                      "                if(trackList[i].name === activeName){ activeIdx = i; break; } " +
-                                      "            } " +
-                                      "        } " +
-                                      "        if(activeIdx === -1) activeIdx = 0; " +
-                                      "        var nextIdx = (activeIdx + 1) % trackList.length; " +
-                                      "        trackList[nextIdx].btn.click(); " +
-                                      "    } " +
-                                      "} " +
-                                      "})()");
+                                  mWebView.loadUrl("javascript:(function(){ if(window.onNotificationAction){ window.onNotificationAction('NEXT_ACTION'); return; } var currentNameEl = document.getElementById('playerTrackName'); if(!currentNameEl) return; var currentName = currentNameEl.textContent; var items = document.querySelectorAll('.track-item'); if(items.length <= 1) return; var currentIndex = -1; for(var i=0; i<items.length; i++){ var nameEl = items[i].querySelector('.track-name'); if(nameEl && nameEl.textContent === currentName){ currentIndex = i; break; } } if(currentIndex !== -1){ var targetIndex = (currentIndex + 1) % items.length; var playBtn = items[targetIndex].querySelector('.action-btn[onclick^=\\"playTrack\\"]'); if(playBtn) playBtn.click(); } })()");
                               } else if ("STOP".equals(action) || "STOP_ACTION".equals(action)) {
                                   mWebView.loadUrl("javascript:var btn = document.getElementById('playerStopBtn'); if(btn) btn.click();");
+                              } else if ("REWIND".equals(action)) {
+                                  mWebView.loadUrl("javascript:(function(){ var audio = window.currentAudio || (typeof currentAudio !== 'undefined' ? currentAudio : null); if(audio) audio.currentTime = Math.max(0, audio.currentTime - 10); })()");
+                              } else if ("FAST_FORWARD".equals(action)) {
+                                  mWebView.loadUrl("javascript:(function(){ var audio = window.currentAudio || (typeof currentAudio !== 'undefined' ? currentAudio : null); if(audio) audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10); })()");
                               }
                           }
                       }
@@ -2045,6 +2043,16 @@ jobs:
                                   MainActivity.sInstance.triggerWebAction("NEXT");
                               }
                               return START_STICKY;
+                          } else if ("ACTION_REWIND".equals(action)) {
+                              if (MainActivity.sInstance != null) {
+                                  MainActivity.sInstance.triggerWebAction("REWIND");
+                              }
+                              return START_STICKY;
+                          } else if ("ACTION_FAST_FORWARD".equals(action)) {
+                              if (MainActivity.sInstance != null) {
+                                  MainActivity.sInstance.triggerWebAction("FAST_FORWARD");
+                              }
+                              return START_STICKY;
                           } else if ("ACTION_STOP".equals(action)) {
                               if (MainActivity.sInstance != null) {
                                   MainActivity.sInstance.triggerWebAction("STOP");
@@ -2204,6 +2212,12 @@ jobs:
                       Intent nextIntent = new Intent(this, ForegroundService.class).setAction("ACTION_NEXT");
                       android.app.PendingIntent pNext = android.app.PendingIntent.getService(this, 12, nextIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
 
+                      Intent rewindIntent = new Intent(this, ForegroundService.class).setAction("ACTION_REWIND");
+                      android.app.PendingIntent pRewind = android.app.PendingIntent.getService(this, 16, rewindIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                      Intent ffIntent = new Intent(this, ForegroundService.class).setAction("ACTION_FAST_FORWARD");
+                      android.app.PendingIntent pFF = android.app.PendingIntent.getService(this, 17, ffIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
                       Intent stopIntent = new Intent(this, ForegroundService.class).setAction("ACTION_STOP");
                       android.app.PendingIntent pStop = android.app.PendingIntent.getService(this, 13, stopIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
 
@@ -2247,55 +2261,23 @@ jobs:
                       String currentTimeStr = currentMins + ":" + (currentLeftSecs < 10 ? "0" : "") + currentLeftSecs;
                       String totalTimeStr = totalMins + ":" + (totalLeftSecs < 10 ? "0" : "") + totalLeftSecs;
                       
-                      String collapsedTimeStr = currentTimeStr + " / " + totalTimeStr;
-                      collapsedViews.setTextViewText(R.id.txt_collapsed_time, collapsedTimeStr);
-
                       expandedViews.setTextViewText(R.id.txt_current_time, currentTimeStr);
                       expandedViews.setTextViewText(R.id.txt_total_duration, totalTimeStr);
-
-                      // Resolve Dynamic System Adaptive Light/Dark Theme Colors programmatically
-                      int primaryColor = 0xFFFFFFFF; // White fallback
-                      int secondaryColor = 0xFF94A3B8; // Slate fallback
-                      
-                      android.content.Context ctx = (MainActivity.sInstance != null) ? MainActivity.sInstance : this;
-                      try {
-                          android.util.TypedValue typedValue = new android.util.TypedValue();
-                          if (ctx.getTheme().resolveAttribute(android.R.attr.textColorPrimary, typedValue, true)) {
-                              primaryColor = typedValue.data;
-                          }
-                          if (ctx.getTheme().resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)) {
-                              secondaryColor = typedValue.data;
-                          }
-                      } catch (Exception e) {
-                          e.printStackTrace();
-                      }
-
-                      // Apply System-Adaptive Colors to Collapsed Views
-                      collapsedViews.setTextColor(R.id.media_track_title, primaryColor);
-                      collapsedViews.setTextColor(R.id.txt_collapsed_time, secondaryColor);
-                      collapsedViews.setInt(R.id.btn_prev, "setColorFilter", primaryColor);
-                      collapsedViews.setInt(R.id.btn_play_pause, "setColorFilter", primaryColor);
-                      collapsedViews.setInt(R.id.btn_next, "setColorFilter", primaryColor);
-
-                      // Apply System-Adaptive Colors to Expanded Views
-                      expandedViews.setTextColor(R.id.media_track_title_large, primaryColor);
-                      expandedViews.setTextColor(R.id.txt_current_time, secondaryColor);
-                      expandedViews.setTextColor(R.id.txt_total_duration, secondaryColor);
-                      expandedViews.setInt(R.id.btn_prev_large, "setColorFilter", primaryColor);
-                      expandedViews.setInt(R.id.btn_play_pause_large, "setColorFilter", primaryColor);
-                      expandedViews.setInt(R.id.btn_next_large, "setColorFilter", primaryColor);
-                      expandedViews.setInt(R.id.btn_stop, "setColorFilter", primaryColor);
 
                       collapsedViews.setOnClickPendingIntent(R.id.btn_prev, pPrev);
                       collapsedViews.setOnClickPendingIntent(R.id.btn_play_pause, pPlay);
                       collapsedViews.setOnClickPendingIntent(R.id.btn_next, pNext);
                       collapsedViews.setOnClickPendingIntent(R.id.tuik_badge, pTuik);
+                      collapsedViews.setOnClickPendingIntent(R.id.notification_root, pOpen);
 
                       expandedViews.setOnClickPendingIntent(R.id.btn_prev_large, pPrev);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_rewind_large, pRewind);
                       expandedViews.setOnClickPendingIntent(R.id.btn_play_pause_large, pPlay);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_fast_forward_large, pFF);
                       expandedViews.setOnClickPendingIntent(R.id.btn_next_large, pNext);
                       expandedViews.setOnClickPendingIntent(R.id.btn_stop, pStop);
                       expandedViews.setOnClickPendingIntent(R.id.tuik_badge_large, pTuik);
+                      expandedViews.setOnClickPendingIntent(R.id.notification_root_large, pOpen);
 
                       NotificationCompat.Builder builder;
                       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -2309,7 +2291,6 @@ jobs:
                               .setCustomBigContentView(expandedViews)
                               .setOngoing(isPlaying)
                               .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
-                              .setContentIntent(pOpen) // Clicking the card body restores the MainActivity track!
                               .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                               .setCategory(NotificationCompat.CATEGORY_TRANSPORT);
 
