@@ -47,6 +47,7 @@ jobs:
           
           echo "org.gradle.java.home=${JAVA_HOME}" > gradle.properties
           echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
           
           # Creating settings.gradle
           cat << 'EOF' > settings.gradle
@@ -779,7 +780,6 @@ jobs:
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
-          import android.webkit.ValueCallback;
           import android.widget.ProgressBar;
           import android.widget.Toast;
           import androidx.core.content.ContextCompat;
@@ -1487,6 +1487,24 @@ jobs:
                   dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE).setTextColor(colorPrimary);
               }
 
+              private void handleNotificationAction(Intent intent) {
+                  if (intent != null && intent.hasExtra("notification_action")) {
+                      final String actionCode = intent.getStringExtra("notification_action");
+                      mWebView.post(new Runnable() {
+                          @Override
+                          public void run() {
+                              if (actionCode.equals("TOGGLE_PLAY_ACTION")) {
+                                  mWebView.loadUrl("javascript:var btn = document.getElementById('playerPlayPauseBtn'); if(btn) btn.click();");
+                              } else if (actionCode.equals("STOP_ACTION")) {
+                                  mWebView.loadUrl("javascript:var btn = document.getElementById('playerStopBtn'); if(btn) btn.click();");
+                              } else {
+                                  mWebView.loadUrl("javascript:if(window.onNotificationAction){window.onNotificationAction('" + actionCode + "');}");
+                              }
+                          }
+                      });
+                  }
+              }
+
               private void updateMediaSessionState(double currentTime, double duration, boolean isPlaying) {
                   Intent intent = new Intent(this, ForegroundService.class);
                   intent.setAction("UPDATE_PROGRESS");
@@ -1686,7 +1704,7 @@ jobs:
                               org.json.JSONArray lines = json.getJSONArray("inboxLines");
                               NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
                               for (int i = 0; i < lines.length(); i++) {
-                                  inboxStyle.addLine(json.getString(i));
+                                  inboxStyle.addLine(lines.getString(i));
                               }
                               builder.setStyle(inboxStyle);
                           }
@@ -2067,7 +2085,7 @@ jobs:
               except Exception as e:
                   print(f"Failed to fetch default icon: {e}")
 
-          splash_src = "app/src/main/assets/_app_icon.png"
+          splash_src = "app/src/main/assets/_splash_icon.png"
           if os.path.exists(splash_src):
               print("Custom splash image found! Compiling drawable resources with Pillow...")
               os.makedirs("app/src/main/res/drawable", exist_ok=True)
