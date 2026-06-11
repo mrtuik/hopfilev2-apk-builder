@@ -766,7 +766,7 @@ jobs:
                   request.setTitle(fileName);
                   request.setDescription("Downloading target assets...");
                   request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                  request.setDestinationInDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
+                  request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
                   DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
                   if (dm != null) {
                       dm.enqueue(request);
