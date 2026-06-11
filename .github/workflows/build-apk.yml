@@ -326,6 +326,275 @@ jobs:
           with open("app/src/main/res/drawable/ic_notification_stop.xml", "w") as f:
               f.write(ic_stop_xml.strip())
 
+          # Generate Developer Vector Icon (Code symbol for "Tuik")
+          ic_code_xml = """<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="12dp"
+              android:height="12dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#818CF8"
+                  android:pathData="M9.4,16.6L4.8,12l4.6-4.6L8,6l-6,6l6,6L9.4,16.6z M14.6,16.6l4.6-4.6l-4.6-4.6L16,6l6,6l-6,6L14.6,16.6z"/>
+          </vector>"""
+          with open("app/src/main/res/drawable/ic_notification_code.xml", "w") as f:
+              f.write(ic_code_xml.strip())
+
+          # Generate Rounded Background Shape for Developer Badge
+          bg_tuik_badge_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#232B3E" />
+              <corners android:radius="4dp" />
+          </shape>"""
+          with open("app/src/main/res/drawable/bg_tuik_badge.xml", "w") as f:
+              f.write(bg_tuik_badge_xml.strip())
+
+          # Generate custom_media_collapsed.xml (Collapsed layout with continuous seekbar and clickable Tuik badge)
+          custom_media_collapsed_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="80dp"
+              android:padding="8dp">
+              <ImageView
+                  android:id="@+id/media_album_art"
+                  android:layout_width="52dp"
+                  android:layout_height="52dp"
+                  android:scaleType="centerCrop"
+                  android:layout_alignParentLeft="true"
+                  android:layout_centerVertical="true"
+                  android:layout_marginLeft="4dp"/>
+              <LinearLayout
+                  android:id="@+id/metadata_layout"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:layout_toRightOf="@id/media_album_art"
+                  android:layout_toLeftOf="@+id/media_controls_layout"
+                  android:layout_centerVertical="true"
+                  android:layout_marginLeft="10dp"
+                  android:layout_marginRight="10dp">
+                  <TextView
+                      android:id="@+id/media_track_title"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Track Title"
+                      android:textColor="#FFFFFF"
+                      android:textSize="13sp"
+                      android:textStyle="bold"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+                  <LinearLayout
+                      android:id="@+id/tuik_badge"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:background="@drawable/bg_tuik_badge"
+                      android:paddingLeft="6dp"
+                      android:paddingRight="6dp"
+                      android:paddingTop="3dp"
+                      android:paddingBottom="3dp"
+                      android:layout_marginTop="4dp"
+                      android:gravity="center_vertical"
+                      android:clickable="true"
+                      android:focusable="true">
+                      <ImageView
+                          android:layout_width="10dp"
+                          android:layout_height="10dp"
+                          android:src="@drawable/ic_notification_code"
+                          android:layout_marginRight="4dp"/>
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="Tuik"
+                          android:textColor="#F8FAFC"
+                          android:textSize="9sp"
+                          android:textStyle="bold"/>
+                  </LinearLayout>
+              </LinearLayout>
+              <LinearLayout
+                  android:id="@+id/media_controls_layout"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_alignParentRight="true"
+                  android:layout_centerVertical="true"
+                  android:layout_marginRight="4dp"
+                  android:gravity="center">
+                  <ImageButton
+                      android:id="@+id/btn_prev"
+                      android:layout_width="28dp"
+                      android:layout_height="28dp"
+                      android:src="@drawable/ic_notification_prev"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Previous"/>
+                  <ImageButton
+                      android:id="@+id/btn_play_pause"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@drawable/ic_notification_pause"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Play/Pause"
+                      android:layout_marginLeft="6dp"
+                      android:layout_marginRight="6dp"/>
+                  <ImageButton
+                      android:id="@+id/btn_next"
+                      android:layout_width="28dp"
+                      android:layout_height="28dp"
+                      android:src="@drawable/ic_notification_next"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Next"/>
+              </LinearLayout>
+              <ProgressBar
+                  android:id="@+id/custom_media_progress"
+                  style="?android:attr/progressBarStyleHorizontal"
+                  android:layout_width="match_parent"
+                  android:layout_height="3dp"
+                  android:layout_alignParentBottom="true"
+                  android:progressDrawable="@android:drawable/progress_horizontal"
+                  android:max="100"
+                  android:progress="0"/>
+          </RelativeLayout>
+          """
+          with open("app/src/main/res/layout/custom_media_collapsed.xml", "w") as f:
+              f.write(custom_media_collapsed_xml.strip())
+
+          # Generate custom_media_expanded.xml (Expanded layout with timeline numbers and clickable Tuik badge)
+          custom_media_expanded_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="144dp"
+              android:padding="12dp">
+              <ImageView
+                  android:id="@+id/media_album_art_large"
+                  android:layout_width="64dp"
+                  android:layout_height="64dp"
+                  android:scaleType="centerCrop"
+                  android:layout_alignParentLeft="true"
+                  android:layout_alignParentTop="true"/>
+              <LinearLayout
+                  android:id="@+id/details_layout"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:layout_toRightOf="@id/media_album_art_large"
+                  android:layout_marginLeft="14dp"
+                  android:layout_alignParentTop="true"
+                  android:layout_toLeftOf="@+id/btn_stop">
+                  <TextView
+                      android:id="@+id/media_track_title_large"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Track Title"
+                      android:textColor="#FFFFFF"
+                      android:textSize="14sp"
+                      android:textStyle="bold"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+                  <LinearLayout
+                      android:id="@+id/tuik_badge_large"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:background="@drawable/bg_tuik_badge"
+                      android:paddingLeft="6dp"
+                      android:paddingRight="6dp"
+                      android:paddingTop="3dp"
+                      android:paddingBottom="3dp"
+                      android:layout_marginTop="4dp"
+                      android:gravity="center_vertical"
+                      android:clickable="true"
+                      android:focusable="true">
+                      <ImageView
+                          android:layout_width="10dp"
+                          android:layout_height="10dp"
+                          android:src="@drawable/ic_notification_code"
+                          android:layout_marginRight="4dp"/>
+                      <TextView
+                          android:layout_width="wrap_content"
+                          android:layout_height="wrap_content"
+                          android:text="Tuik"
+                          android:textColor="#F8FAFC"
+                          android:textSize="9sp"
+                          android:textStyle="bold"/>
+                  </LinearLayout>
+              </LinearLayout>
+              <ImageButton
+                  android:id="@+id/btn_stop"
+                  android:layout_width="28dp"
+                  android:layout_height="28dp"
+                  android:src="@drawable/ic_notification_stop"
+                  android:background="?android:attr/selectableItemBackgroundBorderless"
+                  android:layout_alignParentRight="true"
+                  android:layout_alignParentTop="true"/>
+              <LinearLayout
+                  android:id="@+id/timeline_layout"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_below="@id/media_album_art_large"
+                  android:layout_marginTop="12dp"
+                  android:gravity="center_vertical">
+                  <TextView
+                      android:id="@+id/txt_current_time"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0:00"
+                      android:textColor="#94A3B8"
+                      android:textSize="10sp"/>
+                  <ProgressBar
+                      android:id="@+id/custom_media_progress_large"
+                      style="?android:attr/progressBarStyleHorizontal"
+                      android:layout_width="0dp"
+                      android:layout_height="4dp"
+                      android:layout_weight="1"
+                      android:layout_marginLeft="8dp"
+                      android:layout_marginRight="8dp"
+                      android:max="100"
+                      android:progress="0"/>
+                  <TextView
+                      android:id="@+id/txt_total_duration"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0:00"
+                      android:textColor="#94A3B8"
+                      android:textSize="10sp"/>
+              </LinearLayout>
+              <LinearLayout
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_below="@id/timeline_layout"
+                  android:layout_centerHorizontal="true"
+                  android:layout_marginTop="8dp"
+                  android:gravity="center">
+                  <ImageButton
+                      android:id="@+id/btn_prev_large"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@drawable/ic_notification_prev"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Previous"/>
+                  <ImageButton
+                      android:id="@+id/btn_play_pause_large"
+                      android:layout_width="36dp"
+                      android:layout_height="36dp"
+                      android:src="@drawable/ic_notification_pause"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Play/Pause"
+                      android:layout_marginLeft="14dp"
+                      android:layout_marginRight="14dp"/>
+                  <ImageButton
+                      android:id="@+id/btn_next_large"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@drawable/ic_notification_next"
+                      android:background="?android:attr/selectableItemBackgroundBorderless"
+                      android:contentDescription="Next"/>
+              </LinearLayout>
+          </RelativeLayout>
+          """
+          with open("app/src/main/res/layout/custom_media_expanded.xml", "w") as f:
+              f.write(custom_media_expanded_xml.strip())
+
           # Write activity_splash.xml
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
           activity_splash_xml_template = """<?xml version="1.0" encoding="utf-8"?>
@@ -1884,26 +2153,70 @@ jobs:
                       openIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                       android.app.PendingIntent pOpen = android.app.PendingIntent.getActivity(this, 14, openIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
 
-                      NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "media_channel")
-                              .setSmallIcon(getApplicationInfo().icon)
-                              .setLargeIcon(albumArt)
-                              .setContentTitle(trackName != null ? trackName : "Premium Track")
-                              .setContentText(artistName != null ? artistName : "HopFile Sandbox")
-                              .setSubText("Premium Playback")
+                      // Clicking Tuik Badge redirects directly to custom Developer Portfolios/Websites securely!
+                      Intent tuikIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/mrtuik"));
+                      tuikIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                      android.app.PendingIntent pTuik = android.app.PendingIntent.getActivity(this, 15, tuikIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+
+                      android.widget.RemoteViews collapsedViews = new android.widget.RemoteViews(getPackageName(), R.layout.custom_media_collapsed);
+                      android.widget.RemoteViews expandedViews = new android.widget.RemoteViews(getPackageName(), R.layout.custom_media_expanded);
+
+                      collapsedViews.setTextViewText(R.id.media_track_title, trackName != null ? trackName : "Premium Track");
+                      collapsedViews.setImageViewBitmap(R.id.media_album_art, albumArt);
+
+                      expandedViews.setTextViewText(R.id.media_track_title_large, trackName != null ? trackName : "Premium Track");
+                      expandedViews.setImageViewBitmap(R.id.media_album_art_large, albumArt);
+
+                      int playPauseIcon = isPlaying ? R.drawable.ic_notification_pause : R.drawable.ic_notification_play;
+                      collapsedViews.setImageViewResource(R.id.btn_play_pause, playPauseIcon);
+                      expandedViews.setImageViewResource(R.id.btn_play_pause_large, playPauseIcon);
+
+                      int progressPercent = 0;
+                      if (durationMs > 0) {
+                          progressPercent = (int) (currentTimeMs * 100 / durationMs);
+                      }
+                      collapsedViews.setProgressBar(R.id.custom_media_progress, 100, progressPercent, false);
+                      expandedViews.setProgressBar(R.id.custom_media_progress_large, 100, progressPercent, false);
+                      
+                      long currentSecs = currentTimeMs / 1000;
+                      long totalSecs = durationMs / 1000;
+                      
+                      long currentMins = currentSecs / 60;
+                      long currentLeftSecs = currentSecs % 60;
+                      long totalMins = totalSecs / 60;
+                      long totalLeftSecs = totalSecs % 60;
+                      
+                      String currentTimeStr = currentMins + ":" + (currentLeftSecs < 10 ? "0" : "") + currentLeftSecs;
+                      String totalTimeStr = totalMins + ":" + (totalLeftSecs < 10 ? "0" : "") + totalLeftSecs;
+                      
+                      expandedViews.setTextViewText(R.id.txt_current_time, currentTimeStr);
+                      expandedViews.setTextViewText(R.id.txt_total_duration, totalTimeStr);
+
+                      collapsedViews.setOnClickPendingIntent(R.id.btn_prev, pPrev);
+                      collapsedViews.setOnClickPendingIntent(R.id.btn_play_pause, pPlay);
+                      collapsedViews.setOnClickPendingIntent(R.id.btn_next, pNext);
+                      collapsedViews.setOnClickPendingIntent(R.id.tuik_badge, pTuik);
+
+                      expandedViews.setOnClickPendingIntent(R.id.btn_prev_large, pPrev);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_play_pause_large, pPlay);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_next_large, pNext);
+                      expandedViews.setOnClickPendingIntent(R.id.btn_stop, pStop);
+                      expandedViews.setOnClickPendingIntent(R.id.tuik_badge_large, pTuik);
+
+                      NotificationCompat.Builder builder;
+                      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                          builder = new NotificationCompat.Builder(this, "media_channel");
+                      } else {
+                          builder = new NotificationCompat.Builder(this);
+                      }
+
+                      builder.setSmallIcon(getApplicationInfo().icon)
+                              .setCustomContentView(collapsedViews)
+                              .setCustomBigContentView(expandedViews)
                               .setOngoing(isPlaying)
-                              .setSilent(true)
-                              .setContentIntent(pOpen)
-                              .setColor(0xFF6366F1)
-                              .setColorized(true)
+                              .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
                               .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                              .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
-                              .addAction(R.drawable.ic_notification_prev, "Previous", pPrev)
-                              .addAction(isPlaying ? R.drawable.ic_notification_pause : R.drawable.ic_notification_play, isPlaying ? "Pause" : "Play", pPlay)
-                              .addAction(R.drawable.ic_notification_next, "Next", pNext)
-                              .addAction(R.drawable.ic_notification_stop, "Stop", pStop)
-                              .setStyle(new androidx.media.app.NotificationCompat.MediaStyle()
-                                      .setShowActionsInCompactView(0, 1, 2)
-                                      .setMediaSession(mMediaSession.getSessionToken()));
+                              .setCategory(NotificationCompat.CATEGORY_TRANSPORT);
 
                       if (isPlaying) {
                           startForeground(2002, builder.build());
