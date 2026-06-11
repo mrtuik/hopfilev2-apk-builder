@@ -263,76 +263,208 @@ jobs:
           with open("app/src/main/res/layout/custom_notification.xml", "w") as f:
               f.write(custom_notification_xml.strip())
 
-          # Write premium flat white vector assets for Media Buttons
-          ic_skip_prev_premium_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="24dp"
-              android:height="24dp"
-              android:viewportWidth="24"
-              android:viewportHeight="24">
-              <path
-                  android:fillColor="#0F172A"
-                  android:pathData="M6,6h2v12H6V6z M9.5,12l8.5,6V6L9.5,12z"/>
-          </vector>
+          # Write custom_media_collapsed.xml (Compact player card)
+          custom_media_collapsed_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="64dp"
+              android:background="#FFFFFF"
+              android:padding="8dp">
+              <ImageView
+                  android:id="@+id/media_album_art"
+                  android:layout_width="48dp"
+                  android:layout_height="48dp"
+                  android:src="@mipmap/ic_launcher"
+                  android:layout_alignParentLeft="true"
+                  android:layout_centerVertical="true"
+                  android:scaleType="centerCrop"/>
+              <LinearLayout
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:layout_toRightOf="@id/media_album_art"
+                  android:layout_toLeftOf="@+id/media_controls_layout"
+                  android:layout_centerVertical="true"
+                  android:layout_marginLeft="10dp"
+                  android:layout_marginRight="10dp">
+                  <TextView
+                      android:id="@+id/media_track_title"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Track Title"
+                      android:textColor="#0F172A"
+                      android:textSize="14sp"
+                      android:textStyle="bold"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+                  <TextView
+                      android:id="@+id/media_artist_name"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Artist"
+                      android:textColor="#64748B"
+                      android:textSize="11sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+              </LinearLayout>
+              <LinearLayout
+                  android:id="@+id/media_controls_layout"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_alignParentRight="true"
+                  android:layout_centerVertical="true"
+                  android:gravity="center">
+                  <ImageButton
+                      android:id="@+id/btn_prev"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@android:drawable/ic_media_previous"
+                      android:background="@android:color/transparent"
+                      android:contentDescription="Previous"/>
+                  <ImageButton
+                      android:id="@+id/btn_play_pause"
+                      android:layout_width="36dp"
+                      android:layout_height="36dp"
+                      android:src="@android:drawable/ic_media_pause"
+                      android:background="@android:color/transparent"
+                      android:contentDescription="Play/Pause"
+                      android:layout_marginLeft="6dp"
+                      android:layout_marginRight="6dp"/>
+                  <ImageButton
+                      android:id="@+id/btn_next"
+                      android:layout_width="32dp"
+                      android:layout_height="32dp"
+                      android:src="@android:drawable/ic_media_next"
+                      android:background="@android:color/transparent"
+                      android:contentDescription="Next"/>
+              </LinearLayout>
+          </RelativeLayout>
           """
-          with open("app/src/main/res/drawable/ic_skip_prev_premium.xml", "w") as f:
-              f.write(ic_skip_prev_premium_xml.strip())
+          with open("app/src/main/res/layout/custom_media_collapsed.xml", "w") as f:
+              f.write(custom_media_collapsed_xml.strip())
 
-          ic_play_premium_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="24dp"
-              android:height="24dp"
-              android:viewportWidth="24"
-              android:viewportHeight="24">
-              <path
-                  android:fillColor="#0F172A"
-                  android:pathData="M8,5v14l11,-7L8,5z"/>
-          </vector>
+          # Write custom_media_expanded.xml (Premium card with progressbar timeline)
+          custom_media_expanded_xml = """<?xml version="1.0" encoding="utf-8"?>
+          <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="128dp"
+              android:background="#FFFFFF"
+              android:padding="12dp">
+              <ImageView
+                  android:id="@+id/media_album_art_large"
+                  android:layout_width="64dp"
+                  android:layout_height="64dp"
+                  android:src="@mipmap/ic_launcher"
+                  android:layout_alignParentLeft="true"
+                  android:layout_alignParentTop="true"
+                  android:scaleType="centerCrop"/>
+              <LinearLayout
+                  android:id="@+id/details_layout"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:layout_toRightOf="@id/media_album_art_large"
+                  android:layout_marginLeft="14dp"
+                  android:layout_alignParentTop="true"
+                  android:layout_toLeftOf="@+id/btn_stop">
+                  <TextView
+                      android:id="@+id/media_track_title_large"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Track Title"
+                      android:textColor="#0F172A"
+                      android:textSize="15sp"
+                      android:textStyle="bold"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+                  <TextView
+                      android:id="@+id/media_artist_name_large"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="Artist Name"
+                      android:textColor="#64748B"
+                      android:textSize="12sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+              </LinearLayout>
+              <ImageButton
+                  android:id="@+id/btn_stop"
+                  android:layout_width="28dp"
+                  android:layout_height="28dp"
+                  android:src="@android:drawable/ic_menu_close_clear_cancel"
+                  android:background="@android:color/transparent"
+                  android:layout_alignParentRight="true"
+                  android:layout_alignParentTop="true"/>
+              <LinearLayout
+                  android:id="@+id/timeline_layout"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_below="@id/media_album_art_large"
+                  android:layout_marginTop="10dp"
+                  android:gravity="center_vertical">
+                  <TextView
+                      android:id="@+id/txt_current_time"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0:00"
+                      android:textColor="#64748B"
+                      android:textSize="10sp"/>
+                  <ProgressBar
+                      android:id="@+id/custom_media_progress"
+                      style="?android:attr/progressBarStyleHorizontal"
+                      android:layout_width="0dp"
+                      android:layout_height="6dp"
+                      android:layout_weight="1"
+                      android:layout_marginLeft="8dp"
+                      android:layout_marginRight="8dp"
+                      android:max="100"
+                      android:progress="0"/>
+                  <TextView
+                      android:id="@+id/txt_total_duration"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0:00"
+                      android:textColor="#64748B"
+                      android:textSize="10sp"/>
+              </LinearLayout>
+              <LinearLayout
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_below="@id/timeline_layout"
+                  android:layout_centerHorizontal="true"
+                  android:layout_marginTop="8dp"
+                  android:gravity="center">
+                  <ImageButton
+                      android:id="@+id/btn_prev_large"
+                      android:layout_width="36dp"
+                      android:layout_height="36dp"
+                      android:src="@android:drawable/ic_media_previous"
+                      android:background="@android:color/transparent"
+                      android:contentDescription="Previous"/>
+                  <ImageButton
+                      android:id="@+id/btn_play_pause_large"
+                      android:layout_width="44dp"
+                      android:layout_height="44dp"
+                      android:src="@android:drawable/ic_media_pause"
+                      android:background="@android:color/transparent"
+                      android:contentDescription="Play/Pause"
+                      android:layout_marginLeft="14dp"
+                      android:layout_marginRight="14dp"/>
+                  <ImageButton
+                      android:id="@+id/btn_next_large"
+                      android:layout_width="36dp"
+                      android:layout_height="36dp"
+                      android:src="@android:drawable/ic_media_next"
+                      android:background="@android:color/transparent"
+                      android:contentDescription="Next"/>
+              </LinearLayout>
+          </RelativeLayout>
           """
-          with open("app/src/main/res/drawable/ic_play_premium.xml", "w") as f:
-              f.write(ic_play_premium_xml.strip())
-
-          ic_pause_premium_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="24dp"
-              android:height="24dp"
-              android:viewportWidth="24"
-              android:viewportHeight="24">
-              <path
-                  android:fillColor="#0F172A"
-                  android:pathData="M6,19h4V5H6v14zm8,-14v14h4V5h-4z"/>
-          </vector>
-          """
-          with open("app/src/main/res/drawable/ic_pause_premium.xml", "w") as f:
-              f.write(ic_pause_premium_xml.strip())
-
-          ic_skip_next_premium_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="24dp"
-              android:height="24dp"
-              android:viewportWidth="24"
-              android:viewportHeight="24">
-              <path
-                  android:fillColor="#0F172A"
-                  android:pathData="M6,18l8.5,-6L6,6v12z M16,6h2v12h-2V6z"/>
-          </vector>
-          """
-          with open("app/src/main/res/drawable/ic_skip_next_premium.xml", "w") as f:
-              f.write(ic_skip_next_premium_xml.strip())
-
-          ic_close_premium_xml = """<?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="24dp"
-              android:height="24dp"
-              android:viewportWidth="24"
-              android:viewportHeight="24">
-              <path
-                  android:fillColor="#0F172A"
-                  android:pathData="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12z"/>
-          </vector>
-          """
-          with open("app/src/main/res/drawable/ic_close_premium.xml", "w") as f:
-              f.write(ic_close_premium_xml.strip())
+          with open("app/src/main/res/layout/custom_media_expanded.xml", "w") as f:
+              f.write(custom_media_expanded_xml.strip())
 
           # Write activity_splash.xml
           splash_src_drawable = "@drawable/splash_icon" if has_custom_splash else "@mipmap/ic_launcher"
