@@ -339,16 +339,16 @@ jobs:
           with open("app/src/main/res/drawable/ic_notification_code.xml", "w") as f:
               f.write(ic_code_xml.strip())
 
-          # Generate Rounded Background Shape for Developer Badge
+          # Generate Ultra-Rounded Pill Shape Background for Developer Badge
           bg_tuik_badge_xml = """<?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <solid android:color="#232B3E" />
-              <corners android:radius="4dp" />
+              <solid android:color="#1D4ED8" />
+              <corners android:radius="24dp" />
           </shape>"""
           with open("app/src/main/res/drawable/bg_tuik_badge.xml", "w") as f:
               f.write(bg_tuik_badge_xml.strip())
 
-          # Generate custom_media_collapsed.xml (Collapsed layout with continuous seekbar and clickable Tuik badge)
+          # Generate custom_media_collapsed.xml (Collapsed layout with adaptive colors, seekbar and Tuik badge)
           custom_media_collapsed_xml = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -377,19 +377,27 @@ jobs:
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:text="Track Title"
-                      android:textColor="#FFFFFF"
+                      android:textColor="?android:attr/textColorPrimary"
                       android:textSize="13sp"
                       android:textStyle="bold"
                       android:ellipsize="end"
                       android:singleLine="true"/>
+                  <TextView
+                      android:id="@+id/txt_collapsed_time"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:text="0:00 / 0:00"
+                      android:textColor="?android:attr/textColorSecondary"
+                      android:textSize="10sp"
+                      android:layout_marginTop="2dp"/>
                   <LinearLayout
                       android:id="@+id/tuik_badge"
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:orientation="horizontal"
                       android:background="@drawable/bg_tuik_badge"
-                      android:paddingLeft="6dp"
-                      android:paddingRight="6dp"
+                      android:paddingLeft="10dp"
+                      android:paddingRight="10dp"
                       android:paddingTop="3dp"
                       android:paddingBottom="3dp"
                       android:layout_marginTop="4dp"
@@ -457,7 +465,7 @@ jobs:
           with open("app/src/main/res/layout/custom_media_collapsed.xml", "w") as f:
               f.write(custom_media_collapsed_xml.strip())
 
-          # Generate custom_media_expanded.xml (Expanded layout with timeline numbers and clickable Tuik badge)
+          # Generate custom_media_expanded.xml (Expanded layout with adaptive colors, timeline numbers and Tuik badge)
           custom_media_expanded_xml = """<?xml version="1.0" encoding="utf-8"?>
           <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
@@ -484,7 +492,7 @@ jobs:
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:text="Track Title"
-                      android:textColor="#FFFFFF"
+                      android:textColor="?android:attr/textColorPrimary"
                       android:textSize="14sp"
                       android:textStyle="bold"
                       android:ellipsize="end"
@@ -495,8 +503,8 @@ jobs:
                       android:layout_height="wrap_content"
                       android:orientation="horizontal"
                       android:background="@drawable/bg_tuik_badge"
-                      android:paddingLeft="6dp"
-                      android:paddingRight="6dp"
+                      android:paddingLeft="10dp"
+                      android:paddingRight="10dp"
                       android:paddingTop="3dp"
                       android:paddingBottom="3dp"
                       android:layout_marginTop="4dp"
@@ -538,7 +546,7 @@ jobs:
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:text="0:00"
-                      android:textColor="#94A3B8"
+                      android:textColor="?android:attr/textColorSecondary"
                       android:textSize="10sp"/>
                   <ProgressBar
                       android:id="@+id/custom_media_progress_large"
@@ -555,7 +563,7 @@ jobs:
                       android:layout_width="wrap_content"
                       android:layout_height="wrap_content"
                       android:text="0:00"
-                      android:textColor="#94A3B8"
+                      android:textColor="?android:attr/textColorSecondary"
                       android:textSize="10sp"/>
               </LinearLayout>
               <LinearLayout
@@ -1654,11 +1662,61 @@ jobs:
                       public void run() {
                           if (mWebView != null) {
                               if ("PREV".equals(action)) {
-                                  mWebView.loadUrl("javascript:if(window.onNotificationAction){window.onNotificationAction('PREV_ACTION');}else{var btn = document.getElementById('playerPrevBtn'); if(btn) btn.click();}");
+                                  mWebView.loadUrl("javascript:(function(){ " +
+                                      "if(window.onNotificationAction){ window.onNotificationAction('PREV_ACTION'); } " +
+                                      "else { " +
+                                      "    var buttons = Array.from(document.querySelectorAll('.action-btn[onclick*=\"playTrack\"]')); " +
+                                      "    if(buttons.length > 0){ " +
+                                      "        var activeNameEl = document.getElementById('playerTrackName'); " +
+                                      "        var activeName = activeNameEl ? activeNameEl.textContent.trim() : ''; " +
+                                      "        var activeIdx = -1; " +
+                                      "        var trackList = buttons.map(function(btn){ " +
+                                      "            var onClick = btn.getAttribute('onclick'); " +
+                                      "            var id = onClick.match(/playTrack\\\\(['\"]([^'\"]+)['\"]\\\\)/)[1]; " +
+                                      "            var nameEl = btn.closest('.track-item').querySelector('.track-name'); " +
+                                      "            var name = nameEl ? nameEl.textContent.trim() : ''; " +
+                                      "            return { id: id, name: name, btn: btn }; " +
+                                      "        }); " +
+                                      "        if(activeName){ " +
+                                      "            for(var i=0; i<trackList.length; i++){ " +
+                                      "                if(trackList[i].name === activeName){ activeIdx = i; break; } " +
+                                      "            } " +
+                                      "        } " +
+                                      "        if(activeIdx === -1) activeIdx = 0; " +
+                                      "        var prevIdx = (activeIdx - 1 + trackList.length) % trackList.length; " +
+                                      "        trackList[prevIdx].btn.click(); " +
+                                      "    } " +
+                                      "} " +
+                                      "})()");
                               } else if ("PLAY_PAUSE".equals(action) || "TOGGLE_PLAY_ACTION".equals(action)) {
                                   mWebView.loadUrl("javascript:var btn = document.getElementById('playerPlayPauseBtn'); if(btn) btn.click();");
                               } else if ("NEXT".equals(action)) {
-                                  mWebView.loadUrl("javascript:if(window.onNotificationAction){window.onNotificationAction('NEXT_ACTION');}else{var btn = document.getElementById('playerNextBtn'); if(btn) btn.click();}");
+                                  mWebView.loadUrl("javascript:(function(){ " +
+                                      "if(window.onNotificationAction){ window.onNotificationAction('NEXT_ACTION'); } " +
+                                      "else { " +
+                                      "    var buttons = Array.from(document.querySelectorAll('.action-btn[onclick*=\"playTrack\"]')); " +
+                                      "    if(buttons.length > 0){ " +
+                                      "        var activeNameEl = document.getElementById('playerTrackName'); " +
+                                      "        var activeName = activeNameEl ? activeNameEl.textContent.trim() : ''; " +
+                                      "        var activeIdx = -1; " +
+                                      "        var trackList = buttons.map(function(btn){ " +
+                                      "            var onClick = btn.getAttribute('onclick'); " +
+                                      "            var id = onClick.match(/playTrack\\\\(['\"]([^'\"]+)['\"]\\\\)/)[1]; " +
+                                      "            var nameEl = btn.closest('.track-item').querySelector('.track-name'); " +
+                                      "            var name = nameEl ? nameEl.textContent.trim() : ''; " +
+                                      "            return { id: id, name: name, btn: btn }; " +
+                                      "        }); " +
+                                      "        if(activeName){ " +
+                                      "            for(var i=0; i<trackList.length; i++){ " +
+                                      "                if(trackList[i].name === activeName){ activeIdx = i; break; } " +
+                                      "            } " +
+                                      "        } " +
+                                      "        if(activeIdx === -1) activeIdx = 0; " +
+                                      "        var nextIdx = (activeIdx + 1) % trackList.length; " +
+                                      "        trackList[nextIdx].btn.click(); " +
+                                      "    } " +
+                                      "} " +
+                                      "})()");
                               } else if ("STOP".equals(action) || "STOP_ACTION".equals(action)) {
                                   mWebView.loadUrl("javascript:var btn = document.getElementById('playerStopBtn'); if(btn) btn.click();");
                               }
@@ -2189,8 +2247,44 @@ jobs:
                       String currentTimeStr = currentMins + ":" + (currentLeftSecs < 10 ? "0" : "") + currentLeftSecs;
                       String totalTimeStr = totalMins + ":" + (totalLeftSecs < 10 ? "0" : "") + totalLeftSecs;
                       
+                      String collapsedTimeStr = currentTimeStr + " / " + totalTimeStr;
+                      collapsedViews.setTextViewText(R.id.txt_collapsed_time, collapsedTimeStr);
+
                       expandedViews.setTextViewText(R.id.txt_current_time, currentTimeStr);
                       expandedViews.setTextViewText(R.id.txt_total_duration, totalTimeStr);
+
+                      // Resolve Dynamic System Adaptive Light/Dark Theme Colors programmatically
+                      int primaryColor = 0xFFFFFFFF; // White fallback
+                      int secondaryColor = 0xFF94A3B8; // Slate fallback
+                      
+                      android.content.Context ctx = (MainActivity.sInstance != null) ? MainActivity.sInstance : this;
+                      try {
+                          android.util.TypedValue typedValue = new android.util.TypedValue();
+                          if (ctx.getTheme().resolveAttribute(android.R.attr.textColorPrimary, typedValue, true)) {
+                              primaryColor = typedValue.data;
+                          }
+                          if (ctx.getTheme().resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)) {
+                              secondaryColor = typedValue.data;
+                          }
+                      } catch (Exception e) {
+                          e.printStackTrace();
+                      }
+
+                      // Apply System-Adaptive Colors to Collapsed Views
+                      collapsedViews.setTextColor(R.id.media_track_title, primaryColor);
+                      collapsedViews.setTextColor(R.id.txt_collapsed_time, secondaryColor);
+                      collapsedViews.setInt(R.id.btn_prev, "setColorFilter", primaryColor);
+                      collapsedViews.setInt(R.id.btn_play_pause, "setColorFilter", primaryColor);
+                      collapsedViews.setInt(R.id.btn_next, "setColorFilter", primaryColor);
+
+                      // Apply System-Adaptive Colors to Expanded Views
+                      expandedViews.setTextColor(R.id.media_track_title_large, primaryColor);
+                      expandedViews.setTextColor(R.id.txt_current_time, secondaryColor);
+                      expandedViews.setTextColor(R.id.txt_total_duration, secondaryColor);
+                      expandedViews.setInt(R.id.btn_prev_large, "setColorFilter", primaryColor);
+                      expandedViews.setInt(R.id.btn_play_pause_large, "setColorFilter", primaryColor);
+                      expandedViews.setInt(R.id.btn_next_large, "setColorFilter", primaryColor);
+                      expandedViews.setInt(R.id.btn_stop, "setColorFilter", primaryColor);
 
                       collapsedViews.setOnClickPendingIntent(R.id.btn_prev, pPrev);
                       collapsedViews.setOnClickPendingIntent(R.id.btn_play_pause, pPlay);
@@ -2215,6 +2309,7 @@ jobs:
                               .setCustomBigContentView(expandedViews)
                               .setOngoing(isPlaying)
                               .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                              .setContentIntent(pOpen) // Clicking the card body restores the MainActivity track!
                               .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                               .setCategory(NotificationCompat.CATEGORY_TRANSPORT);
 
