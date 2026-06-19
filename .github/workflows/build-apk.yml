@@ -170,8 +170,8 @@ jobs:
               implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
               implementation 'com.google.android.material:material:1.9.0'
               implementation 'androidx.media:media:1.6.0'
-            implementation 'androidx.webkit:webkit:1.7.0'
-        }
+              implementation 'androidx.webkit:webkit:1.7.0'
+          }
         """
           app_build_gradle = app_build_gradle_template.replace("__PACKAGE_ID__", package_id)
           app_build_gradle = app_build_gradle.replace("__VERSION_CODE__", str(version_code))
@@ -739,7 +739,6 @@ jobs:
               orientation_mode = "landscape"
 
           # Write AndroidManifest.xml
-          # FileProvider Path File তৈরি করা (ক্যামেরা দিয়ে ছবি তোলার জন্য)
         os.makedirs("app/src/main/res/xml", exist_ok=True)
         file_paths_xml = """<?xml version="1.0" encoding="utf-8"?>
         <paths>
